@@ -1,0 +1,22 @@
+{
+  "name": "aiXiv",
+  "version": "0.1.0",
+  "description": "A personalized digest from the arXiv",
+  "scripts": {
+    "css": "sass --quiet-deps --load-path=node_modules scss/main.scss static/style.css",
+    "css:watch": "sass --quiet-deps --load-path=node_modules scss/main.scss static/style.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@picocss/pico": "^2.1.1",
+    "sass": "^1.101.0"
+  },
+  "dependencies": {
+    "htmx.org": "^2.0.10",
+    "katex": "^0.17.0",
+    "lucide-static": "^1.22.0"
+  }
+}

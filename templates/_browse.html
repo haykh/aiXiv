@@ -1,0 +1,51 @@
+<form hx-post="/papers/import" hx-target="#browse-results" hx-swap="innerHTML"
+    hx-disabled-elt="find button[type='submit']">
+    <input type="hidden" name="profile_id" value="{{ profile.id }}">
+    <input type="hidden" name="category" value="{{ category }}">
+    <input type="hidden" name="start" value="{{ start }}">
+    <input type="hidden" name="end" value="{{ end }}">
+    <input type="hidden" name="page" value="{{ page }}">
+    <input type="hidden" name="per_page" value="{{ per_page }}">
+
+    <div class="toolbar">
+        <button type="button" class="small secondary outline" onclick="toggleAll(this)">select all</button>
+        <button type="submit" class="small">
+            <span class="when-idle">import selected</span>
+            <span class="when-busy" aria-busy="true">importing...</span>
+        </button>
+    </div>
+
+    {% if not papers %}
+    <p class="empty">No papers found for this category and date range.</p>
+    {% endif %}
+
+    {% for p in papers %}
+    {% set done = p.arxiv_id in imported %}
+    <article class="{{ 'imported' if done }}">
+        <label class="pick">
+            <input type="checkbox" name="arxiv_ids" value="{{ p.arxiv_id }}" {{ "disabled" if done }}>
+            <a href="{{ p.url }}" target="_blank">{{ p.title | latex }}</a>
+            {% if done %}<span class="badge">✓ imported</span>{% endif %}
+        </label>
+        <p class="authors">{{ p.authors[:6] | join(", ") }}{% if p.authors|length > 6 %}, et al.{% endif %}</p>
+        <p class="cats">{{ p.categories | join(" · ") }}</p>
+        <p class="abstract">{{ p.abstract | latex }}</p>
+    </article>
+    {% endfor %}
+
+    <nav class="pager">
+        {% if page > 1 %}
+        <button type="button"
+            hx-get="/papers/browse?profile_id={{ profile.id }}&category={{ category }}&start={{ start }}&end={{ end }}&per_page={{ per_page }}&page={{ page - 1 }}"
+            hx-disabled-elt="this"
+            hx-target="#browse-results" hx-swap="innerHTML">&#12296; prev</button>
+        {% endif %}
+        <span>page {{ page }} / {{ total_pages }}</span>
+        {% if has_next %}
+        <button type="button"
+            hx-get="/papers/browse?profile_id={{ profile.id }}&category={{ category }}&start={{ start }}&end={{ end }}&per_page={{ per_page }}&page={{ page + 1 }}"
+            hx-disabled-elt="this"
+            hx-target="#browse-results" hx-swap="innerHTML">next &#12297;</button>
+        {% endif %}
+    </nav>
+</form>

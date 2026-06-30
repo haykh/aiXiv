@@ -1,0 +1,52 @@
+{% if provider == "ollama" %}
+<div class="setting">
+    <span class="setting-icon">{{ icon("link") }}</span>
+    <label class="setting-body">
+        <strong>Ollama URL</strong>
+        <span class="setting-desc">Address of your local Ollama server.</span>
+        <input type="text" name="ollama_api_url" value="{{ settings.ollama_api_url }}" hx-get="/settings/models"
+            hx-target="#model-field" hx-trigger="change delay:300ms" hx-include="this">
+    </label>
+</div>
+<div id="model-field">
+    {% include "_settings_models.html" with context %}
+</div>
+
+{% elif provider == "claude" %}
+<div class="setting">
+    <span class="setting-icon">{{ icon("key-round") }}</span>
+    <label class="setting-body">
+        <strong>Claude API key</strong>
+        <span class="setting-desc">Stored locally; used to authenticate with the Anthropic API.</span>
+        <input type="password" name="claude_api_key" value="{{ settings.claude_api_key }}" placeholder="sk-ant-…">
+    </label>
+</div>
+<div class="setting">
+    <span class="setting-icon">{{ icon("cpu") }}</span>
+    <label class="setting-body">
+        <strong>Model</strong>
+        <span class="setting-desc">Which Claude model to use.</span>
+        <input type="text" name="llm_model" value="{{ settings.llm_model }}" placeholder="e.g. claude-opus-4-8">
+    </label>
+</div>
+<p class="empty">Claude isn't wired into generation yet — Ollama is the only working provider.</p>
+
+{% elif provider == "openai" %}
+<div class="setting">
+    <span class="setting-icon">{{ icon("key-round") }}</span>
+    <label class="setting-body">
+        <strong>OpenAI API key</strong>
+        <span class="setting-desc">Stored locally; used to authenticate with the OpenAI API.</span>
+        <input type="password" name="openai_api_key" value="{{ settings.openai_api_key }}" placeholder="sk-…">
+    </label>
+</div>
+<div class="setting">
+    <span class="setting-icon">{{ icon("cpu") }}</span>
+    <label class="setting-body">
+        <strong>Model</strong>
+        <span class="setting-desc">Which OpenAI model to use.</span>
+        <input type="text" name="llm_model" value="{{ settings.llm_model }}" placeholder="e.g. gpt-4o">
+    </label>
+</div>
+<p class="empty">OpenAI isn't wired into generation yet — Ollama is the only working provider.</p>
+{% endif %}

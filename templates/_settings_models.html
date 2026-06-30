@@ -1,0 +1,15 @@
+<div class="setting">
+    <span class="setting-icon">{{ icon("cpu") }}</span>
+    <label class="setting-body">
+        <strong>Model</strong>
+        <span class="setting-desc">Which installed model to use.</span>
+        <select name="llm_model">
+            {% if not models %}
+            <option value="">— couldn't reach Ollama at this URL —</option>
+            {% endif %}
+            {% for m in models %}
+            <option value="{{ m }}" {{ "selected" if m == llm_model }}>{{ m }}</option>
+            {% endfor %}
+        </select>
+    </label>
+</div>

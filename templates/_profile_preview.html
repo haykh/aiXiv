@@ -1,0 +1,27 @@
+<form hx-post="/profiles/preview" hx-target="#profile-form-body" hx-swap="innerHTML"
+    hx-disabled-elt="find button[type='submit']">
+    <label>name
+        <input name="name" value="{{ name }}" required>
+    </label>
+    <label>your text
+        <textarea name="raw_text" rows="5" required>{{ raw_text }}</textarea>
+    </label>
+
+    <p class="preview-label">AI analysis — edit if you like, re-evaluate, or create:</p>
+
+    <label>summary
+        <textarea name="summary" rows="4">{{ summary }}</textarea>
+    </label>
+    <label>keywords <small>(comma-separated)</small>
+        <input name="keywords" value="{{ keywords | join(', ') }}">
+    </label>
+
+    <footer class="modal-footer">
+        <button type="button" class="secondary" onclick="closeNewProfile()">cancel</button>
+        <button type="submit" class="secondary outline">
+            <span class="when-idle">re-evaluate</span>
+            <span class="when-busy" aria-busy="true">re-analyzing...</span>
+        </button>
+        <button type="button" hx-post="/profiles/create" hx-include="closest form" hx-disabled-elt="this">create</button>
+    </footer>
+</form>

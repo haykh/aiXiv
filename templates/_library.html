@@ -1,0 +1,99 @@
+<div class="tabs">
+    <input type="radio" name="libtab" id="tab-unranked" {% if active_tab !="ranked" %}checked{% endif %}>
+    <input type="radio" name="libtab" id="tab-ranked" {% if active_tab=="ranked" %}checked{% endif %}>
+
+    <div class="tab-bar">
+        <label for="tab-unranked">unranked · {{ unranked|length }}</label>
+        <label for="tab-ranked">ranked · {{ ranked|length }}</label>
+    </div>
+
+    {# ───────────── unranked ───────────── #}
+    <div class="tab-panel unranked">
+        {% if not unranked %}
+        <p class="empty">No unranked papers — switch to the <strong>browse arXiv</strong> tab to import some.</p>
+        {% else %}
+        <form hx-post="/digest/rank" hx-target="#library" hx-swap="innerHTML"
+            hx-disabled-elt="find button[type='submit']">
+            <input type="hidden" name="profile_id" value="{{ profile.id }}">
+            <div class="toolbar">
+                <button type="button" class="small secondary outline" onclick="toggleAll(this)">select all</button>
+                <button type="submit" class="small">
+                    <span class="when-idle">rank selected</span>
+                    <span class="when-busy" aria-busy="true">ranking...</span>
+                </button>
+            </div>
+            {% for p in unranked %}
+            <article class="unranked">
+                <label class="pick">
+                    <input type="checkbox" name="paper_ids" value="{{ p.id }}">
+                    <a class="title" href="{{ p.url }}" target="_blank">{{ p.title | latex }}</a>
+                </label>
+                <p class="authors">{{ p.authors[:6] | join(", ") }}{% if p.authors|length > 6 %}, et al.{% endif %}</p>
+                <p class="cats">{{ p.categories | join(" · ") }}</p>
+                <p class="abstract">{{ p.abstract | latex }}</p>
+                <div class="card-actions">
+                    <button type="button" class="icon-btn danger secondary outline" hx-post="/library/remove"
+                        hx-target="#library" hx-disabled-elt="this" hx-confirm="Remove from library?"
+                        title="Remove from library" aria-label="Remove from library"
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ p.id }}", "active_tab": "unranked"}'>{{
+                        icon("trash-2") }}</button>
+                </div>
+            </article>
+            {% endfor %}
+        </form>
+        {% endif %}
+    </div>
+
+    {# ───────────── ranked ───────────── #}
+    <div class="tab-panel ranked">
+        {% if not ranked %}
+        <p class="empty">No ranked papers yet. Pick unranked papers and click "rank selected".</p>
+        {% else %}
+        <form class="sort-form" hx-get="/library" hx-target="#library" hx-swap="innerHTML">
+            <input type="hidden" name="profile_id" value="{{ profile.id }}">
+            <input type="hidden" name="active_tab" value="ranked">
+            <label>sort by
+                <select name="sort" onchange="this.form.requestSubmit()">
+                    <option value="score" {{ "selected" if sort=="score" }}>relevance</option>
+                    <option value="date" {{ "selected" if sort=="date" }}>ranking date</option>
+                </select>
+            </label>
+        </form>
+        {% for score, paper in ranked %}
+        <article class="ranked">
+            <div class="scorecol">
+                <div class="score ai" title="AI relevance">{{ score.score | round | int }}</div>
+                <button type="button" class="score vote" popovertarget="vote-{{ paper.id }}"
+                    title="your rating — click to set">
+                    {{ votes[paper.id] if paper.id in votes else "-" }}
+                </button>
+                <div class="vote-pop" popover id="vote-{{ paper.id }}">
+                    <input type="range" name="score" min="0" max="10" step="1" value="{{ votes.get(paper.id, 5) }}"
+                        oninput="rateInput(this)" hx-post="/votes" hx-trigger="change" hx-swap="none"
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}"}'>
+                    <output>{{ votes.get(paper.id, 5) }}</output>
+                </div>
+            </div>
+            <div class="body">
+                <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
+                <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif
+                    %}</p>
+                <p class="cats">{{ paper.categories | join(" · ") }}</p>
+                <p class="abstract">{{ paper.abstract | latex }}</p>
+                <p class="reason">{{ score.reason }}</p>
+                <small class="ranked-at">ranked {{ score.updated_at | timeago }}</small>
+                <div class="card-actions">
+                    <button type="button" class="small secondary outline" hx-post="/scores/delete" hx-target="#library"
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}"}'>unrank</button>
+                    <button type="button" class="icon-btn danger secondary outline" hx-post="/library/remove"
+                        hx-target="#library" hx-confirm="Remove from library?" title="Remove from library"
+                        aria-label="Remove from library"
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}", "active_tab": "ranked"}'>{{
+                        icon("trash-2") }}</button>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+        {% endif %}
+    </div>
+</div>

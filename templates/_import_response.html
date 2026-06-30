@@ -1,0 +1,7 @@
+{# main target: refresh the browse list (newly imported now disabled) #}
+{% include "_browse.html" %}
+
+{# out-of-band: update the always-visible library so imports land in Unranked #}
+<section id="library" hx-swap-oob="true">
+    {% include "_library.html" %}
+</section>
