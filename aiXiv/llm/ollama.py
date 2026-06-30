@@ -1,5 +1,6 @@
 import httpx
 
+from aiXiv.defaults import Defaults
 from aiXiv.llm.base import LLMClient
 
 
@@ -13,7 +14,7 @@ class OllamaClient(LLMClient):
         messages: list[dict[str, str]],
         *,
         schema=None,
-        temperature: float = 0.2,
+        temperature: float = Defaults.LLM_TEMPERATURE,
     ) -> str:
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(

@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 from sqlmodel import SQLModel, Field, Column, JSON, UniqueConstraint
 
+from aiXiv.defaults import Defaults
+
 
 class Profile(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -77,8 +79,8 @@ class Bookmark(SQLModel, table=True):
 
 class Setting(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    llm_provider: str = Field(default="ollama")
-    llm_model: str = Field(default="deepseek-r1:latest")
-    ollama_api_url: str = Field(default="http://172.29.96.1:11434")
+    llm_provider: str = Field(default=Defaults.LLM_PROVIDER)
+    llm_model: str = Field(default=Defaults.LLM_MODEL)
+    ollama_api_url: str = Field(default=Defaults.OLLAMA_API_URL)
     claude_api_key: str = Field(default="")
     openai_api_key: str = Field(default="")

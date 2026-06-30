@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from aiXiv.defaults import Defaults
 from aiXiv.database.db import get_settings, Session
 from aiXiv.database.tables import Profile
 from aiXiv.llm import get_llm_client
@@ -30,7 +31,7 @@ async def analyze_text(text: str, session: Session) -> ProfileExtraction:
             },
         ],
         schema=ProfileExtraction.model_json_schema(),
-        temperature=0.2,
+        temperature=Defaults.LLM_TEMPERATURE,
     )
     return ProfileExtraction.model_validate_json(response)
 

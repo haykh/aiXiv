@@ -11,10 +11,11 @@ from sqlmodel import (
     create_engine,
 )
 
+from aiXiv.defaults import Defaults
 from aiXiv.database.tables import Setting
 
 
-DB_PATH = Path(os.environ.get("AIXIV_DB_PATH", "./data/app.db"))
+DB_PATH = Path(os.environ.get("AIXIV_DB_PATH", Defaults.DB_PATH))
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 db_filename = str(DB_PATH)
@@ -30,8 +31,6 @@ def initialize_db():
 
 
 def _ensure_setting_columns():
-    # create_all() adds missing TABLES but never missing COLUMNS, so new
-    # Setting fields won't appear on an existing DB — add them by hand.
     con = sqlite3.connect(db_filename)
     try:
         existing = {row[1] for row in con.execute("PRAGMA table_info(setting)")}

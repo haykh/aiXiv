@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from sqlmodel import select
 
+from aiXiv.defaults import Defaults
 from aiXiv.database.db import get_settings, Session
 from aiXiv.database.tables import Profile, Score, Paper
 from aiXiv.llm import get_llm_client
@@ -39,7 +40,7 @@ async def rank_papers(
                 },
             ],
             schema=PaperScore.model_json_schema(),
-            temperature=0.2,
+            temperature=Defaults.LLM_TEMPERATURE,
         )
         ranking_data = PaperScore.model_validate_json(response)
         existing = session.exec(

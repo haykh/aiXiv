@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import select
 
 from aiXiv import __version__
+from aiXiv.defaults import Defaults
 from aiXiv.database.db import initialize_db, SessionDep, get_settings
 from aiXiv.database.tables import Profile, Score, Paper, Library, Vote, Bookmark
 from aiXiv.utils.latex2html import latex_to_html
@@ -23,8 +24,6 @@ from aiXiv.arxiv.arxiv import fetch_from_arxiv, fetch_from_arxiv_by_ids, store_p
 from aiXiv.arxiv.categories import ArxivCategory
 
 root_path = Path(__file__).parent.parent
-
-PAGE_SIZE = 20
 
 
 @asynccontextmanager
@@ -194,7 +193,6 @@ async def create_profile(
 ):
     kw = [k.strip() for k in keywords.split(",") if k.strip()]
     profile = save_profile(name, raw_text, summary, kw, session)
-    # tell htmx to do a full-page redirect (closes the modal)
     return Response(headers={"HX-Redirect": f"/?profile_id={profile.id}"})
 
 
@@ -207,7 +205,7 @@ async def browse(
     start: str,
     end: str,
     page: int = 1,
-    per_page: int = PAGE_SIZE,
+    per_page: int = Defaults.BROWSE_PAGE_SIZE,
 ):
     if category not in {c.value for c in ArxivCategory}:
         return HTMLResponse(
@@ -227,7 +225,7 @@ async def import_papers(
     start: str = Form(...),
     end: str = Form(...),
     page: int = Form(1),
-    per_page: int = Form(PAGE_SIZE),
+    per_page: int = Form(Defaults.BROWSE_PAGE_SIZE),
     arxiv_ids: list[str] = Form([]),
 ):
     profile = session.get(Profile, profile_id)

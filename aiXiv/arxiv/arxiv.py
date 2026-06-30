@@ -30,7 +30,6 @@ def _parse_feed(text: str) -> tuple[list[Paper], int]:
                 url=p.link,
             )
         )
-    # arXiv reports the total number of matches via OpenSearch — used for paging
     total = int(parsed.feed.get("opensearch_totalresults", len(papers)))
     return papers, total
 
