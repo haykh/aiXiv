@@ -8,13 +8,13 @@ $unranked-color: #2b97e5;
 $ctypes: ranked, unranked, arxiv;
 
 @each $ctype in $ctypes {
-    $color: if($ctype ==ranked, $ranked-color, if($ctype ==unranked, $unranked-color, $arxiv-color));
+    $color: if(sass($ctype ==ranked): $ranked-color; else: if(sass($ctype ==unranked): $unranked-color; else: $arxiv-color));
     $color-hover: color.adjust($color, $lightness: 5%);
     $color-background: color.adjust($color, $lightness: -15%, $saturation: -5%);
     $color-hover-background: color.adjust($color-background, $lightness: -10%);
     $color-border: color.adjust($color-background, $lightness: 5%);
     $color-hover-border: color.adjust($color-hover-background, $lightness: 5%);
-    $color-focus: color.adjust($color, $alpha: -0.75%);
+    $color-focus: color.adjust($color, $alpha: -0.75);
 
     .#{$ctype} {
         --pico-primary: #{$color};

@@ -3,7 +3,6 @@ from datetime import datetime
 from pathlib import Path
 from functools import lru_cache
 from contextlib import asynccontextmanager
-import logging
 
 from markupsafe import Markup
 from fastapi import FastAPI, Request, Form, Response
@@ -24,8 +23,6 @@ from aiXiv.arxiv.arxiv import fetch_from_arxiv, fetch_from_arxiv_by_ids, store_p
 from aiXiv.arxiv.categories import ArxivCategory
 
 root_path = Path(__file__).parent.parent
-
-logger = logging.getLogger("uvicorn.error")
 
 PAGE_SIZE = 20
 
@@ -122,8 +119,6 @@ async def browse_context(
         datetime.strptime(end, "%Y-%m-%d"),
         per_page,
     )
-    for p in papers:
-        logger.info(f"Fetched paper: {p.arxiv_id} - {p.title} - {p.abstract}")
     ids = [p.arxiv_id for p in papers]
     imported = set(
         session.exec(
