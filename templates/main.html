@@ -155,8 +155,8 @@
                     <strong>new profile</strong>
                     <button aria-label="Close" rel="prev" onclick="closeNewProfile()"></button>
                 </header>
-                <div id="profile-form-body">
-                    <form hx-post="/profiles/preview" hx-target="#profile-form-body" hx-swap="innerHTML"
+                <div id="profile-form-body" class="profile-form-body">
+                    <form hx-post="/profiles/preview" hx-target="closest .profile-form-body" hx-swap="innerHTML"
                         hx-disabled-elt="find button[type='submit']">
                         <input name="name" placeholder="profile name" required>
                         <textarea name="raw_text" rows="8"
@@ -171,6 +171,16 @@
                         </footer>
                     </form>
                 </div>
+            </article>
+        </dialog>
+
+        <dialog id="edit-profile-dlg">
+            <article>
+                <header>
+                    <strong>edit profile</strong>
+                    <button aria-label="Close" rel="prev" onclick="closeEditProfile()"></button>
+                </header>
+                <div id="edit-form-body" class="profile-form-body"></div>
             </article>
         </dialog>
     </main>
@@ -278,6 +288,15 @@
         const openNewProfile = () => { npDlg.showModal(); }
         const closeNewProfile = () => { npDlg.close(); }
         npDlg.addEventListener("click", (e) => { if (e.target === npDlg) closeNewProfile(); });
+
+        // edit-profile modal: load the pre-filled form fresh each open
+        const editDlg = document.getElementById("edit-profile-dlg");
+        const openEditProfile = (id) => {
+            htmx.ajax("GET", "/profiles/edit?profile_id=" + id, "#edit-form-body");
+            editDlg.showModal();
+        };
+        const closeEditProfile = () => { editDlg.close(); }
+        editDlg.addEventListener("click", (e) => { if (e.target === editDlg) closeEditProfile(); });
 
         // profile dropdown: the "+ new profile" entry opens the modal instead of switching
         const onProfileChange = (sel) => {

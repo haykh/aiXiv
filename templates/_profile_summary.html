@@ -1,6 +1,10 @@
 <details id="profile-summary" class="profile-summary" {% if open %}open{% endif %}>
     <summary>show profile summary</summary>
-    <h1>{{ profile.name }}</h1>
+    <div class="profile-title">
+        <h1>{{ profile.name }}</h1>
+        <button type="button" class="icon-btn secondary outline" onclick="openEditProfile({{ profile.id }})"
+            title="Edit profile" aria-label="Edit profile">{{ icon("pencil") }}</button>
+    </div>
     <p>{{ profile.summary }}</p>
     <p class="keywords">{% for k in profile.keywords %}<span>{{ k }}</span>{% endfor %}</p>
     {% include "_refine_slot.html" %}

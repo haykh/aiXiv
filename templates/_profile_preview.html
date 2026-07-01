@@ -1,5 +1,6 @@
-<form hx-post="/profiles/preview" hx-target="#profile-form-body" hx-swap="innerHTML"
+<form hx-post="/profiles/preview" hx-target="closest .profile-form-body" hx-swap="innerHTML"
     hx-disabled-elt="find button[type='submit']">
+    {% if profile_id %}<input type="hidden" name="profile_id" value="{{ profile_id }}">{% endif %}
     <label>name
         <input name="name" value="{{ name }}" required>
     </label>
@@ -7,7 +8,7 @@
         <textarea name="raw_text" rows="5" required>{{ raw_text }}</textarea>
     </label>
 
-    <p class="preview-label">AI analysis — edit if you like, re-evaluate, or create:</p>
+    <p class="preview-label">AI analysis — edit if you like, re-evaluate, or {{ "save" if profile_id else "create" }}:</p>
 
     <label>summary
         <textarea name="summary" rows="4">{{ summary }}</textarea>
@@ -17,12 +18,15 @@
     </label>
 
     <footer class="modal-footer">
-        <button type="button" class="secondary" onclick="closeNewProfile()">cancel</button>
+        <button type="button" class="secondary" onclick="this.closest('dialog').close()">cancel</button>
         <button type="submit" class="secondary outline">
             <span class="when-idle">re-evaluate</span>
             <span class="when-busy" aria-busy="true">re-analyzing...</span>
         </button>
-        <button type="button" hx-post="/profiles/create" hx-include="closest form"
-            hx-disabled-elt="this">create</button>
+        {% if profile_id %}
+        <button type="button" hx-post="/profiles/update" hx-include="closest form" hx-disabled-elt="this">save</button>
+        {% else %}
+        <button type="button" hx-post="/profiles/create" hx-include="closest form" hx-disabled-elt="this">create</button>
+        {% endif %}
     </footer>
 </form>

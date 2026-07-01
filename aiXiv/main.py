@@ -226,6 +226,7 @@ async def preview_profile(
     session: SessionDep,
     name: str = Form(...),
     raw_text: str = Form(...),
+    profile_id: int | None = Form(None),
 ):
     extraction = await analyze_text(raw_text, session)
     return templates.TemplateResponse(
@@ -236,6 +237,23 @@ async def preview_profile(
             "raw_text": raw_text,
             "summary": extraction.summary,
             "keywords": extraction.keywords,
+            "profile_id": profile_id,
+        },
+    )
+
+
+@app.get("/profiles/edit")
+async def edit_profile(request: Request, session: SessionDep, profile_id: int):
+    profile = session.get(Profile, profile_id)
+    return templates.TemplateResponse(
+        request,
+        "_profile_preview.html",
+        {
+            "name": profile.name,
+            "raw_text": profile.raw_text,
+            "summary": profile.summary,
+            "keywords": profile.keywords,
+            "profile_id": profile.id,
         },
     )
 
@@ -250,6 +268,28 @@ async def create_profile(
 ):
     kw = [k.strip() for k in keywords.split(",") if k.strip()]
     profile = save_profile(name, raw_text, summary, kw, session)
+    return Response(headers={"HX-Redirect": f"/?profile_id={profile.id}"})
+
+
+@app.post("/profiles/update")
+async def update_profile_route(
+    session: SessionDep,
+    profile_id: int = Form(...),
+    name: str = Form(...),
+    raw_text: str = Form(...),
+    summary: str = Form(...),
+    keywords: str = Form(""),
+):
+    kw = [k.strip() for k in keywords.split(",") if k.strip()]
+    profile = session.get(Profile, profile_id)
+    profile.name, profile.raw_text, profile.summary, profile.keywords = (
+        name,
+        raw_text,
+        summary,
+        kw,
+    )
+    session.add(profile)
+    session.commit()
     return Response(headers={"HX-Redirect": f"/?profile_id={profile.id}"})
 
 

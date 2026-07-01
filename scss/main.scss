@@ -289,6 +289,16 @@ button.small {
     margin-bottom: 0.75rem;
 }
 
+.profile-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+
+    h1 {
+        margin: 0;
+    }
+}
+
 .profile-summary>p {
     color: var(--pico-muted-color);
     margin: 0.3rem 0;
