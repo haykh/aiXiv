@@ -42,7 +42,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 # 2. Front-end dependencies (required — served at runtime from node_modules)
-npm install
+npm i
 
 # 3. Build the stylesheet (a compiled static/css/main.css is committed;
 #    run this after editing anything under scss/)
@@ -56,6 +56,8 @@ fastapi dev aiXiv/main.py
 ```
 
 Then open the URL it prints (by default <http://127.0.0.1:8000>). The SQLite database is created automatically at `data/app.db` on first run.
+
+> You may also just run the `scss` transpiler together with the `fastapi` server concurrently using just `npm start`.
 
 ## Configuration
 

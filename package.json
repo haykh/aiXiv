@@ -2,16 +2,40 @@
   "name": "aiXiv",
   "version": "0.1.0",
   "description": "A personalized digest from the arXiv",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/haykh/aiXiv.git"
+  },
+  "bugs": {
+    "url": "https://github.com/haykh/aiXiv/issues"
+  },
   "scripts": {
     "css": "sass --quiet-deps --load-path=node_modules --style=compressed scss:static/css",
-    "css:watch": "sass --quiet-deps --load-path=node_modules --style=compressed scss:static/css --watch"
+    "css:watch": "sass --quiet-deps --load-path=node_modules --style=compressed scss:static/css --watch",
+    "start": "concurrently \"npm run css:watch\" \"fastapi dev aiXiv/main.py\""
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "library",
+    "ai",
+    "digest",
+    "arxiv",
+    "arxiv-papers",
+    "llm",
+    "chatgpt",
+    "claude",
+    "codex",
+    "ollama"
+  ],
+  "author": {
+    "name": "Hayk Hakobyan",
+    "email": "haykh.astro@gmail.com",
+    "url": "https://haykh.github.io/tilde/"
+  },
+  "license": "GPL-3.0",
   "type": "commonjs",
   "devDependencies": {
     "@picocss/pico": "^2.1.1",
+    "concurrently": "^10.0.3",
     "sass": "^1.101.0"
   },
   "dependencies": {
