@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "description": "A personalized digest from the arXiv",
   "scripts": {
-    "css": "sass --quiet-deps --load-path=node_modules scss/main.scss static/style.css",
-    "css:watch": "sass --quiet-deps --load-path=node_modules scss/main.scss static/style.css --watch"
+    "css": "sass --quiet-deps --load-path=node_modules --style=compressed scss:static/css",
+    "css:watch": "sass --quiet-deps --load-path=node_modules --style=compressed scss:static/css --watch"
   },
   "keywords": [],
   "author": "",

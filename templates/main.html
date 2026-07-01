@@ -3,12 +3,15 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="description" content="AI-powered personalized digest of arXiv papers based on your research profile.">
+    <meta name="keywords" content="arxiv, ai, research, science, papers, digest, personalized, llm">
+    <meta name="author" content="@haykh">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>aiXiv · personalized arXiv digest</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
-    <link rel="icon" href="{{ url_for('static', path='favicon.ico') }}" sizes="any">
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='favicon.svg') }}">
-    <link rel="apple-touch-icon" href="{{ url_for('static', path='apple-touch-icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <link rel="icon" href="{{ url_for('static', path='icons/favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='icons/favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', path='icons/apple-touch-icon.png') }}">
     <link rel="stylesheet" href="/katex/katex.min.css">
     <script defer src="/katex/katex.min.js"></script>
     <script defer src="/katex/contrib/auto-render.min.js"></script>
@@ -24,11 +27,13 @@
 
         {% if profiles %}
         <form method="get" action="/" class="profile-switch">
-            <select name="profile_id" onchange="this.form.submit()">
+            <select name="profile_id" data-current="{{ profile.id if profile else '' }}"
+                onchange="onProfileChange(this)">
                 {% for p in profiles %}
                 <option value="{{ p.id }}" {% if profile and p.id==profile.id %}selected{% endif %}>{{ p.name }}
                 </option>
                 {% endfor %}
+                <option value="__new__">+ new profile</option>
             </select>
         </form>
         {% if profile %}
@@ -39,9 +44,10 @@
                 aria-label="Delete profile">{{ icon("trash-2") }}</button>
         </form>
         {% endif %}
+        {% else %}
+        <button class="new-profile-btn secondary outline" onclick="openNewProfile()">+ new profile</button>
         {% endif %}
 
-        <button class="new-profile-btn secondary outline" onclick="openNewProfile()">+ new profile</button>
         <button class="settings-btn secondary outline" onclick="openSettings()" aria-label="settings">{{
             icon("settings") }}</button>
     </header>
@@ -171,7 +177,7 @@
 
     <footer class="site-footer">
         <span>
-            <img src="{{ url_for('static', path='icon.svg') }}" alt="aiXiv logo" width="32"> aiXiv
+            <img src="{{ url_for('static', path='icons/icon.svg') }}" alt="aiXiv logo" width="32"> aiXiv
         </span>
         <small>
             personalized arXiv digest based on your research profile
@@ -272,6 +278,16 @@
         const openNewProfile = () => { npDlg.showModal(); }
         const closeNewProfile = () => { npDlg.close(); }
         npDlg.addEventListener("click", (e) => { if (e.target === npDlg) closeNewProfile(); });
+
+        // profile dropdown: the "+ new profile" entry opens the modal instead of switching
+        const onProfileChange = (sel) => {
+            if (sel.value === "__new__") {
+                sel.value = sel.dataset.current;   // revert the visible selection
+                openNewProfile();
+            } else {
+                sel.form.submit();
+            }
+        };
 
         // settings modal: load provider fields fresh each open (defers the model fetch)
         const settingsDlg = document.getElementById("settings-dlg");
