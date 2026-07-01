@@ -86,6 +86,12 @@
                     <span class="i-some">{{ icon("list-todo") }}</span>
                     <span class="i-all">{{ icon("check-check") }}</span>
                 </button>
+                <button type="button" class="small secondary outline" hx-post="/scores/delete-selected"
+                    hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this"
+                    hx-include="[form='ranked-remove-form'], #ranked-remove-form">
+                    <span class="when-idle">unrank selected</span>
+                    <span class="when-busy" aria-busy="true">unranking...</span>
+                </button>
                 <button type="submit" class="small secondary outline">
                     <span class="when-idle">delete selected</span>
                     <span class="when-busy" aria-busy="true">deleting...</span>
@@ -162,7 +168,8 @@
             {% endif %}
             <div class="body">
                 <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
-                <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif %}</p>
+                <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif
+                    %}</p>
                 <p class="cats">{{ paper.categories | join(" · ") }}</p>
                 <p class="abstract">{{ paper.abstract | latex }}</p>
                 {% if s %}<p class="reason">{{ s.reason }}</p>{% endif %}

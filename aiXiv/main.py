@@ -396,6 +396,27 @@ async def delete_score(
     return library_response(request, session, profile_id, active_tab="ranked")
 
 
+@app.post("/scores/delete-selected")
+async def delete_selected_scores(
+    request: Request,
+    session: SessionDep,
+    profile_id: int = Form(...),
+    paper_ids: list[int] = Form([]),
+):
+    """Unrank selected papers (drop their Score rows; the papers stay in the library)."""
+    if paper_ids:
+        scores = session.exec(
+            select(Score).where(
+                Score.profile_id == profile_id,
+                Score.paper_id.in_(paper_ids),
+            )
+        ).all()
+        for score in scores:
+            session.delete(score)
+        session.commit()
+    return library_response(request, session, profile_id, active_tab="ranked")
+
+
 @app.post("/library/remove-selected")
 async def remove_selected_from_library(
     request: Request,
