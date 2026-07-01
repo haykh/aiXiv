@@ -1,0 +1,7 @@
+<details id="profile-summary" class="profile-summary" {% if open %}open{% endif %}>
+    <summary>show profile summary</summary>
+    <h1>{{ profile.name }}</h1>
+    <p>{{ profile.summary }}</p>
+    <p class="keywords">{% for k in profile.keywords %}<span>{{ k }}</span>{% endfor %}</p>
+    {% include "_refine_slot.html" %}
+</details>

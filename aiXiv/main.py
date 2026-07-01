@@ -17,7 +17,7 @@ from aiXiv.database.db import initialize_db, SessionDep, get_settings
 from aiXiv.database.tables import Profile, Score, Paper, Library, Vote, Bookmark
 from aiXiv.utils.latex2html import latex_to_html
 from aiXiv.utils.timeago import timeago
-from aiXiv.llm.profile import analyze_text, save_profile
+from aiXiv.llm.profile import analyze_text, save_profile, refine_profile
 from aiXiv.llm.papers import rank_papers
 from aiXiv.llm.ollama import OllamaClient
 from aiXiv.arxiv.arxiv import fetch_from_arxiv, fetch_from_arxiv_by_ids, store_papers
@@ -97,6 +97,7 @@ def library_context(
         "ranked": ranked,
         "unranked": unranked,
         "votes": votes,
+        "vote_count": len(votes),
         "sort": sort,
         "active_tab": active_tab,
     }
@@ -112,7 +113,9 @@ def library_response(
     """Re-render the library partial — the response shape most routes share."""
     profile = session.get(Profile, profile_id)
     return templates.TemplateResponse(
-        request, "_library.html", library_context(session, profile, sort, active_tab)
+        request,
+        "_library_oob.html",
+        library_context(session, profile, sort, active_tab),
     )
 
 
@@ -416,6 +419,7 @@ async def save_settings(
 
 @app.post("/votes")
 async def vote(
+    request: Request,
     session: SessionDep,
     profile_id: int = Form(...),
     paper_id: int = Form(...),
@@ -429,7 +433,13 @@ async def vote(
     else:
         session.add(Vote(profile_id=profile_id, paper_id=paper_id, score=score))
     session.commit()
-    return Response(status_code=204)
+    profile = session.get(Profile, profile_id)
+    count = len(session.exec(select(Vote).where(Vote.profile_id == profile_id)).all())
+    return templates.TemplateResponse(
+        request,
+        "_refine_slot.html",
+        {"profile": profile, "vote_count": count, "oob": True},
+    )
 
 
 @app.post("/votes/delete")
@@ -447,3 +457,35 @@ async def delete_vote(
         session.delete(existing)
         session.commit()
     return library_response(request, session, profile_id, active_tab=active_tab)
+
+
+@app.post("/profiles/refine")
+async def refine_route(
+    request: Request,
+    session: SessionDep,
+    profile_id: int = Form(...),
+):
+    profile = session.get(Profile, profile_id)
+    votes = session.exec(
+        select(Vote, Paper)
+        .join(Paper, Vote.paper_id == Paper.id)
+        .where(Vote.profile_id == profile_id)
+    ).all()
+    if votes:
+        ai = {
+            s.paper_id: s.score
+            for s in session.exec(
+                select(Score).where(Score.profile_id == profile_id)
+            ).all()
+        }
+        feedback = [(paper, ai.get(paper.id), vote.score) for vote, paper in votes]
+        extraction = await refine_profile(profile, feedback, session)
+        profile.summary = extraction.summary
+        profile.keywords = extraction.keywords
+        session.add(profile)
+        session.commit()
+    return templates.TemplateResponse(
+        request,
+        "_profile_summary.html",
+        {"profile": profile, "vote_count": len(votes), "open": True},
+    )

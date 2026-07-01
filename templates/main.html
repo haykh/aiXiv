@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>aiXiv</title>
+    <title>aiXiv · personalized arXiv digest</title>
     <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
     <link rel="icon" href="{{ url_for('static', path='favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='favicon.svg') }}">
@@ -52,12 +52,7 @@
         <p class="empty">No profile yet — create one to get started.</p>
         {% else %}
 
-        <details class="profile-summary">
-            <summary>show profile summary</summary>
-            <h1>{{ profile.name }}</h1>
-            <p>{{ profile.summary }}</p>
-            <p class="keywords">{% for k in profile.keywords %}<span>{{ k }}</span>{% endfor %}</p>
-        </details>
+        {% include "_profile_summary.html" %}
 
         <div class="view-tabs">
             <input type="radio" name="view" id="view-library" checked>

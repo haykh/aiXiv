@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from aiXiv.defaults import Defaults
 from aiXiv.database.db import get_settings, Session
-from aiXiv.database.tables import Profile
+from aiXiv.database.tables import Profile, Paper
 from aiXiv.llm import get_llm_client
 
 
@@ -54,3 +54,44 @@ def save_profile(
     session.commit()
     session.refresh(profile)
     return profile
+
+
+async def refine_profile(
+    profile: Profile,
+    feedback: list[tuple[Paper, float | None, int]],
+    session: Session,
+) -> ProfileExtraction:
+    """Rewrite a profile's summary + keywords from the user's 0-10 ratings.
+    feedback items are (paper, ai_score, user_score)."""
+    settings = get_settings(session)
+    client = get_llm_client(settings)
+
+    rated = "\n".join(
+        f"- user rated {user}/10 (AI said {'%.0f' % ai if ai is not None else 'n/a'}): {paper.title}\n"
+        f"  {paper.abstract[:300]}"
+        for paper, ai, user in feedback
+    )
+
+    response = await client.generate(
+        messages=[
+            {
+                "role": "system",
+                "content": "You refine an existing researcher interest profile using their feedback. "
+                "They rated papers 0-10 for how relevant each ACTUALLY is to them.\n"
+                "- Emphasize topics/methods from highly-rated papers.\n"
+                "- De-emphasize topics that appear only in low-rated papers.\n"
+                "- Stay grounded in the original profile and the rated papers; do not invent new interests.\n"
+                "Produce an updated summary (a dense paragraph, comparable against abstracts) "
+                "and keyword list. Respond as JSON.",
+            },
+            {
+                "role": "user",
+                "content": f"Current profile:\nsummary: {profile.summary}\n"
+                f"keywords: {', '.join(profile.keywords)}\n\n"
+                f"Rated papers:\n{rated}",
+            },
+        ],
+        schema=ProfileExtraction.model_json_schema(),
+        temperature=Defaults.LLM_TEMPERATURE,
+    )
+    return ProfileExtraction.model_validate_json(response)

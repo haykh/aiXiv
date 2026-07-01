@@ -1,0 +1,9 @@
+<div id="refine-slot" {% if oob %} hx-swap-oob="true" {% endif %}>
+    {% if vote_count %}
+    <button type="button" class="small secondary outline" hx-post="/profiles/refine" hx-target="#profile-summary"
+        hx-swap="outerHTML" hx-disabled-elt="this" hx-vals='{"profile_id": "{{ profile.id }}"}'>
+        <span class="when-idle">refine from {{ vote_count }} vote{{ "s" if vote_count != 1 }}</span>
+        <span class="when-busy" aria-busy="true">refining...</span>
+    </button>
+    {% endif %}
+</div>
