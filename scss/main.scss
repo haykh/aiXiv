@@ -27,6 +27,8 @@ $ctypes: accent, ranked, unranked, arxiv;
             --pico-primary-hover-background: #{$color-hover-background};
             --pico-primary-hover-border: #{$color-hover-border};
             --pico-primary-focus: #{$color-focus};
+            --pico-form-element-active-border-color: #{$color-border};
+            --pico-form-element-focus-color: #{$color-focus};
         }
     }
 
@@ -40,6 +42,8 @@ $ctypes: accent, ranked, unranked, arxiv;
             --pico-primary-hover-background: #{$color-hover-background};
             --pico-primary-hover-border: #{$color-hover-border};
             --pico-primary-focus: #{$color-focus};
+            --pico-form-element-active-border-color: #{$color-border};
+            --pico-form-element-focus-color: #{$color-focus};
         }
     }
 }
@@ -105,6 +109,7 @@ body>footer {
     color: var(--pico-muted-color);
     text-decoration: none;
 }
+
 .git-link:hover {
     color: var(--pico-primary-inverse);
 }
@@ -232,6 +237,22 @@ button.small {
 /* ───────────────────────── profile summary ───────────────────────── */
 .profile-summary {
     margin-bottom: 1.25rem;
+}
+
+.profile-summary summary {
+    cursor: pointer;
+    width: fit-content;
+    font-family: var(--pico-font-family-monospace);
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+}
+
+.profile-summary summary:hover {
+    color: var(--pico-color);
+}
+
+.profile-summary[open] summary {
+    margin-bottom: 0.75rem;
 }
 
 .profile-summary>p {
@@ -409,7 +430,7 @@ article {
 
 article .pick {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.5rem;
     margin: 0;
 }
@@ -608,12 +629,11 @@ article.ranked .score {
     padding: 0;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(13, 17, 23, 0.72);
     box-shadow: 0 1.4rem 4rem rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(20px) saturate(1.45);
-    -webkit-backdrop-filter: blur(20px) saturate(1.45);
 }
 
+#new-profile-dlg>article,
+#settings-dlg>article,
 #new-profile-dlg::backdrop,
 #settings-dlg::backdrop {
     background: rgba(1, 4, 9, 0.54);
@@ -756,19 +776,17 @@ article.ranked .score.vote:hover {
 }
 
 .vote-pop input[type="range"]::-webkit-slider-runnable-track {
-    background:
-        repeating-linear-gradient(to right,
-            transparent 0 calc(10% - 1px),
-            #{color.adjust($ranked-color, $alpha: -0.5)} calc(10% - 1px) 10%),
-        linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+    background: repeating-linear-gradient(to right,
+        transparent 0 calc(10% - 1px),
+        #{color.adjust($ranked-color, $alpha: -0.5)} calc(10% - 1px) 10%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
 }
 
 .vote-pop input[type="range"]::-moz-range-track {
-    background:
-        repeating-linear-gradient(to right,
-            transparent 0 calc(10% - 1px),
-            #{color.adjust($ranked-color, $alpha: -0.5)} calc(10% - 1px) 10%),
-        linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+    background: repeating-linear-gradient(to right,
+        transparent 0 calc(10% - 1px),
+        #{color.adjust($ranked-color, $alpha: -0.5)} calc(10% - 1px) 10%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
 }
 
 .vote-pop:popover-open {

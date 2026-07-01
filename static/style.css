@@ -2815,6 +2815,8 @@ textarea,
   --pico-primary-hover-background: rgb(202.7318548387, 24.7681451613, 24.7681451613);
   --pico-primary-hover-border: rgb(225.4556451613, 27.5443548387, 27.5443548387);
   --pico-primary-focus: rgba(242, 113, 113, 0.25);
+  --pico-form-element-active-border-color: rgb(232.5725806452, 71.4274193548, 71.4274193548);
+  --pico-form-element-focus-color: rgba(242, 113, 113, 0.25);
 }
 
 .ranked {
@@ -2826,6 +2828,8 @@ textarea,
   --pico-primary-hover-background: rgb(71.3040855533, 102.1153688525, 36.3846311475);
   --pico-primary-hover-border: rgb(84.4322745902, 120.9163934426, 43.0836065574);
   --pico-primary-focus: rgba(137, 197, 69, 0.25);
+  --pico-form-element-active-border-color: rgb(110.6886526639, 158.518442623, 56.481557377);
+  --pico-form-element-focus-color: rgba(137, 197, 69, 0.25);
 }
 
 .unranked {
@@ -2837,6 +2841,8 @@ textarea,
   --pico-primary-hover-background: rgb(19.9196428571, 68.5104858804, 152.5803571429);
   --pico-primary-hover-border: rgb(22.8642857143, 78.6381229236, 175.1357142857);
   --pico-primary-focus: rgba(64, 127, 236, 0.25);
+  --pico-form-element-active-border-color: rgb(28.7535714286, 98.89339701, 220.2464285714);
+  --pico-form-element-focus-color: rgba(64, 127, 236, 0.25);
 }
 
 .arxiv {
@@ -2848,6 +2854,8 @@ textarea,
   --pico-primary-hover-background: rgb(202.7318548387, 24.7681451613, 24.7681451613);
   --pico-primary-hover-border: rgb(225.4556451613, 27.5443548387, 27.5443548387);
   --pico-primary-focus: rgba(242, 113, 113, 0.25);
+  --pico-form-element-active-border-color: rgb(232.5725806452, 71.4274193548, 71.4274193548);
+  --pico-form-element-focus-color: rgba(242, 113, 113, 0.25);
 }
 
 /* ───────────────────────── theme tokens ───────────────────────── */
@@ -3040,6 +3048,22 @@ button.small {
   margin-bottom: 1.25rem;
 }
 
+.profile-summary summary {
+  cursor: pointer;
+  width: fit-content;
+  font-family: var(--pico-font-family-monospace);
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+.profile-summary summary:hover {
+  color: var(--pico-color);
+}
+
+.profile-summary[open] summary {
+  margin-bottom: 0.75rem;
+}
+
 .profile-summary > p {
   color: var(--pico-muted-color);
   margin: 0.3rem 0;
@@ -3215,7 +3239,7 @@ article {
 
 article .pick {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.5rem;
   margin: 0;
 }
@@ -3414,12 +3438,11 @@ article.ranked .score {
   padding: 0;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(13, 17, 23, 0.72);
   box-shadow: 0 1.4rem 4rem rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(20px) saturate(1.45);
-  -webkit-backdrop-filter: blur(20px) saturate(1.45);
 }
 
+#new-profile-dlg > article,
+#settings-dlg > article,
 #new-profile-dlg::backdrop,
 #settings-dlg::backdrop {
   background: rgba(1, 4, 9, 0.54);
