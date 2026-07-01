@@ -1,14 +1,15 @@
 @use "@picocss/pico/scss/pico";
 @use 'sass:color';
 
+$accent-color: #f27171;
 $arxiv-color: #f27171;
 $ranked-color: #89c545;
-$unranked-color: #2b97e5;
+$unranked-color: #407fec;
 
-$ctypes: ranked, unranked, arxiv;
+$ctypes: accent, ranked, unranked, arxiv;
 
 @each $ctype in $ctypes {
-    $color: if(sass($ctype ==ranked): $ranked-color; else: if(sass($ctype ==unranked): $unranked-color; else: $arxiv-color));
+    $color: if(sass($ctype ==accent): $accent-color; else: if(sass($ctype ==ranked): $ranked-color; else: if(sass($ctype ==unranked): $unranked-color; else: $arxiv-color)));
     $color-hover: color.adjust($color, $lightness: 5%);
     $color-background: color.adjust($color, $lightness: -15%, $saturation: -5%);
     $color-hover-background: color.adjust($color-background, $lightness: -10%);
@@ -16,14 +17,30 @@ $ctypes: ranked, unranked, arxiv;
     $color-hover-border: color.adjust($color-hover-background, $lightness: 5%);
     $color-focus: color.adjust($color, $alpha: -0.75);
 
-    .#{$ctype} {
-        --pico-primary: #{$color};
-        --pico-primary-hover: #{$color-hover};
-        --pico-primary-border: #{$color-border};
-        --pico-primary-background: #{$color-background};
-        --pico-primary-hover-background: #{$color-hover-background};
-        --pico-primary-hover-border: #{$color-hover-border};
-        --pico-primary-focus: #{$color-focus};
+    @if $ctype =="accent" {
+        [data-theme="dark"] {
+            --pico-primary: #{$color};
+            --pico-primary-hover: #{$color-hover};
+            --pico-primary-border: #{$color-border};
+            --pico-primary-underline: #{$color};
+            --pico-primary-background: #{$color-background};
+            --pico-primary-hover-background: #{$color-hover-background};
+            --pico-primary-hover-border: #{$color-hover-border};
+            --pico-primary-focus: #{$color-focus};
+        }
+    }
+
+    @else {
+        .#{$ctype} {
+            --pico-primary: #{$color};
+            --pico-primary-hover: #{$color-hover};
+            --pico-primary-border: #{$color-border};
+            --pico-primary-underline: #{$color};
+            --pico-primary-background: #{$color-background};
+            --pico-primary-hover-background: #{$color-hover-background};
+            --pico-primary-hover-border: #{$color-hover-border};
+            --pico-primary-focus: #{$color-focus};
+        }
     }
 }
 
@@ -52,7 +69,49 @@ $ctypes: ranked, unranked, arxiv;
 body {
     max-width: 56rem;
     margin-inline: auto;
-    padding: 1.25rem 1.25rem 5rem;
+}
+
+body,
+html {
+    height: 100vh;
+}
+
+body>footer {
+    position: sticky;
+    top: 100vh;
+}
+
+.site-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem;
+    color: var(--pico-muted-color);
+}
+
+.site-footer small {
+    grid-column: 2;
+    text-align: center;
+}
+
+.git-link {
+    grid-column: 3;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--pico-font-family-monospace);
+    white-space: nowrap;
+    color: var(--pico-muted-color);
+    text-decoration: none;
+}
+.git-link:hover {
+    color: var(--pico-primary-inverse);
+}
+
+.git-link svg {
+    width: 1rem;
+    height: 1rem;
 }
 
 h1 {
@@ -191,7 +250,6 @@ button.small {
 .keywords span {
     font-family: var(--pico-font-family-monospace);
     font-size: 0.72rem;
-    color: var(--pico-primary);
     background: rgba(86, 211, 100, 0.08);
     border: 1px solid var(--pico-card-border-color);
     border-radius: 999px;
@@ -228,10 +286,14 @@ button.small {
     display: none;
 }
 
-#view-library:checked~.view-bar label[for="view-library"],
-#view-browse:checked~.view-bar label[for="view-browse"] {
+#view-library:checked~.view-bar label[for="view-library"] {
     color: var(--pico-primary);
     border-bottom-color: var(--pico-primary);
+}
+
+#view-browse:checked~.view-bar label[for="view-browse"] {
+    color: #{$arxiv-color};
+    border-bottom-color: #{$arxiv-color};
 }
 
 #view-library:checked~.view-panel.view-library,
@@ -544,6 +606,19 @@ article.ranked .score {
 #new-profile-dlg>article,
 #settings-dlg>article {
     padding: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(13, 17, 23, 0.72);
+    box-shadow: 0 1.4rem 4rem rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(20px) saturate(1.45);
+    -webkit-backdrop-filter: blur(20px) saturate(1.45);
+}
+
+#new-profile-dlg::backdrop,
+#settings-dlg::backdrop {
+    background: rgba(1, 4, 9, 0.54);
+    backdrop-filter: blur(12px) saturate(1.25);
+    -webkit-backdrop-filter: blur(12px) saturate(1.25);
 }
 
 #new-profile-dlg>article>header,
@@ -553,7 +628,8 @@ article.ranked .score {
     justify-content: space-between;
     margin: 0;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--pico-card-border-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 #new-profile-dlg>article>header>*,
@@ -622,16 +698,77 @@ article.ranked .score.vote:hover {
     border-color: var(--pico-primary);
 }
 
+.vote-controls {
+    position: relative;
+    display: inline-block;
+}
+
+.vote-clear {
+    position: absolute;
+    top: -0.45rem;
+    right: -0.45rem;
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pico-color);
+    background: rgba(13, 17, 23, 0.82);
+    border-color: var(--pico-card-border-color);
+    border-radius: 999px;
+    box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.28);
+}
+
+.vote-clear[hidden] {
+    display: none;
+}
+
+.vote-clear svg {
+    width: 0.65rem;
+    height: 0.65rem;
+}
+
 .vote-pop[popover] {
+    --pico-primary: #{$ranked-color};
+    --pico-primary-background: #{color.adjust($ranked-color, $lightness: -15%)};
+    --pico-range-active-border-color: #{color.adjust($ranked-color, $alpha: -0.5)};
+    --pico-range-thumb-active-color: #{$ranked-color};
+    --pico-range-thumb-color: #{color.adjust($ranked-color, $lightness: -4%)};
     inset: auto;
     margin: 0;
     position-area: right;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.6rem 0.8rem;
-    border: 1px solid var(--pico-card-border-color);
-    background: var(--pico-card-background-color);
-    border-radius: var(--pico-border-radius);
+    padding: 0.7rem 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(13, 17, 23, 0.66);
+    border-radius: 0.65rem;
+    box-shadow: 0 1.1rem 2.6rem rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(18px) saturate(1.45);
+    -webkit-backdrop-filter: blur(18px) saturate(1.45);
+}
+
+.vote-pop input[type="range"] {
+    width: 11rem;
+    margin: 0;
+    accent-color: $ranked-color;
+}
+
+.vote-pop input[type="range"]::-webkit-slider-runnable-track {
+    background:
+        repeating-linear-gradient(to right,
+            transparent 0 calc(10% - 1px),
+            #{color.adjust($ranked-color, $alpha: -0.5)} calc(10% - 1px) 10%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+}
+
+.vote-pop input[type="range"]::-moz-range-track {
+    background:
+        repeating-linear-gradient(to right,
+            transparent 0 calc(10% - 1px),
+            #{color.adjust($ranked-color, $alpha: -0.5)} calc(10% - 1px) 10%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
 }
 
 .vote-pop:popover-open {

@@ -2806,10 +2806,22 @@ textarea,
     transition-duration: 0s !important;
   }
 }
+[data-theme=dark] {
+  --pico-primary: #f27171;
+  --pico-primary-hover: rgb(244.1387096774, 136.3612903226, 136.3612903226);
+  --pico-primary-border: rgb(232.5725806452, 71.4274193548, 71.4274193548);
+  --pico-primary-underline: #f27171;
+  --pico-primary-background: rgb(229.7963709677, 48.7036290323, 48.7036290323);
+  --pico-primary-hover-background: rgb(202.7318548387, 24.7681451613, 24.7681451613);
+  --pico-primary-hover-border: rgb(225.4556451613, 27.5443548387, 27.5443548387);
+  --pico-primary-focus: rgba(242, 113, 113, 0.25);
+}
+
 .ranked {
   --pico-primary: #89c545;
   --pico-primary-hover: rgb(149.3319672131, 203.0614754098, 88.4385245902);
   --pico-primary-border: rgb(110.6886526639, 158.518442623, 56.481557377);
+  --pico-primary-underline: #89c545;
   --pico-primary-background: rgb(97.560463627, 139.7174180328, 49.7825819672);
   --pico-primary-hover-background: rgb(71.3040855533, 102.1153688525, 36.3846311475);
   --pico-primary-hover-border: rgb(84.4322745902, 120.9163934426, 43.0836065574);
@@ -2817,19 +2829,21 @@ textarea,
 }
 
 .unranked {
-  --pico-primary: #2b97e5;
-  --pico-primary-hover: rgb(65.7142857143, 162.1428571429, 231.7857142857);
-  --pico-primary-border: rgb(29.6678571429, 123.5374423963, 191.3321428571);
-  --pico-primary-background: rgb(26.2446428571, 109.2831221198, 169.2553571429);
-  --pico-primary-hover-background: rgb(19.3982142857, 80.7744815668, 125.1017857143);
-  --pico-primary-hover-border: rgb(22.8214285714, 95.0288018433, 147.1785714286);
-  --pico-primary-focus: rgba(43, 151, 229, 0.25);
+  --pico-primary: #407fec;
+  --pico-primary-hover: rgb(87.1928571429, 142.5428571429, 238.3071428571);
+  --pico-primary-border: rgb(28.7535714286, 98.89339701, 220.2464285714);
+  --pico-primary-underline: #407fec;
+  --pico-primary-background: rgb(25.8089285714, 88.7657599668, 197.6910714286);
+  --pico-primary-hover-background: rgb(19.9196428571, 68.5104858804, 152.5803571429);
+  --pico-primary-hover-border: rgb(22.8642857143, 78.6381229236, 175.1357142857);
+  --pico-primary-focus: rgba(64, 127, 236, 0.25);
 }
 
 .arxiv {
   --pico-primary: #f27171;
   --pico-primary-hover: rgb(244.1387096774, 136.3612903226, 136.3612903226);
   --pico-primary-border: rgb(232.5725806452, 71.4274193548, 71.4274193548);
+  --pico-primary-underline: #f27171;
   --pico-primary-background: rgb(229.7963709677, 48.7036290323, 48.7036290323);
   --pico-primary-hover-background: rgb(202.7318548387, 24.7681451613, 24.7681451613);
   --pico-primary-hover-border: rgb(225.4556451613, 27.5443548387, 27.5443548387);
@@ -2860,7 +2874,50 @@ textarea,
 body {
   max-width: 56rem;
   margin-inline: auto;
-  padding: 1.25rem 1.25rem 5rem;
+}
+
+body,
+html {
+  height: 100vh;
+}
+
+body > footer {
+  position: sticky;
+  top: 100vh;
+}
+
+.site-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  color: var(--pico-muted-color);
+}
+
+.site-footer small {
+  grid-column: 2;
+  text-align: center;
+}
+
+.git-link {
+  grid-column: 3;
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--pico-font-family-monospace);
+  white-space: nowrap;
+  color: var(--pico-muted-color);
+  text-decoration: none;
+}
+
+.git-link:hover {
+  color: var(--pico-primary-inverse);
+}
+
+.git-link svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 h1 {
@@ -2999,7 +3056,6 @@ button.small {
 .keywords span {
   font-family: var(--pico-font-family-monospace);
   font-size: 0.72rem;
-  color: var(--pico-primary);
   background: rgba(86, 211, 100, 0.08);
   border: 1px solid var(--pico-card-border-color);
   border-radius: 999px;
@@ -3036,10 +3092,14 @@ button.small {
   display: none;
 }
 
-#view-library:checked ~ .view-bar label[for=view-library],
-#view-browse:checked ~ .view-bar label[for=view-browse] {
+#view-library:checked ~ .view-bar label[for=view-library] {
   color: var(--pico-primary);
   border-bottom-color: var(--pico-primary);
+}
+
+#view-browse:checked ~ .view-bar label[for=view-browse] {
+  color: #f27171;
+  border-bottom-color: #f27171;
 }
 
 #view-library:checked ~ .view-panel.view-library,
@@ -3125,8 +3185,8 @@ button.small {
 }
 
 #tab-unranked:checked ~ .tab-bar label[for=tab-unranked] {
-  color: #2b97e5;
-  border-bottom-color: #2b97e5;
+  color: #407fec;
+  border-bottom-color: #407fec;
 }
 
 #tab-ranked:checked ~ .tab-bar label[for=tab-ranked] {
@@ -3352,6 +3412,19 @@ article.ranked .score {
 #new-profile-dlg > article,
 #settings-dlg > article {
   padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(13, 17, 23, 0.72);
+  box-shadow: 0 1.4rem 4rem rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px) saturate(1.45);
+  -webkit-backdrop-filter: blur(20px) saturate(1.45);
+}
+
+#new-profile-dlg::backdrop,
+#settings-dlg::backdrop {
+  background: rgba(1, 4, 9, 0.54);
+  backdrop-filter: blur(12px) saturate(1.25);
+  -webkit-backdrop-filter: blur(12px) saturate(1.25);
 }
 
 #new-profile-dlg > article > header,
@@ -3361,7 +3434,8 @@ article.ranked .score {
   justify-content: space-between;
   margin: 0;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--pico-card-border-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 #new-profile-dlg > article > header > *,
@@ -3428,16 +3502,69 @@ article.ranked .score.vote:hover {
   border-color: var(--pico-primary);
 }
 
+.vote-controls {
+  position: relative;
+  display: inline-block;
+}
+
+.vote-clear {
+  position: absolute;
+  top: -0.45rem;
+  right: -0.45rem;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pico-color);
+  background: rgba(13, 17, 23, 0.82);
+  border-color: var(--pico-card-border-color);
+  border-radius: 999px;
+  box-shadow: 0 0.2rem 0.6rem rgba(0, 0, 0, 0.28);
+}
+
+.vote-clear[hidden] {
+  display: none;
+}
+
+.vote-clear svg {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
 .vote-pop[popover] {
+  --pico-primary: #89c545;
+  --pico-primary-background: rgb(97.856557377, 144.4549180328, 45.0450819672);
+  --pico-range-active-border-color: rgba(137, 197, 69, 0.5);
+  --pico-range-thumb-active-color: #89c545;
+  --pico-range-thumb-color: rgb(126.8262295082, 187.2196721311, 58.3803278689);
   inset: auto;
   margin: 0;
   position-area: right;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid var(--pico-card-border-color);
-  background: var(--pico-card-background-color);
-  border-radius: var(--pico-border-radius);
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(13, 17, 23, 0.66);
+  border-radius: 0.65rem;
+  box-shadow: 0 1.1rem 2.6rem rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(1.45);
+  -webkit-backdrop-filter: blur(18px) saturate(1.45);
+}
+
+.vote-pop input[type=range] {
+  width: 11rem;
+  margin: 0;
+  accent-color: #89c545;
+}
+
+.vote-pop input[type=range]::-webkit-slider-runnable-track {
+  background: repeating-linear-gradient(to right, transparent 0 calc(10% - 1px), rgba(137, 197, 69, 0.5) calc(10% - 1px) 10%), linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
+}
+
+.vote-pop input[type=range]::-moz-range-track {
+  background: repeating-linear-gradient(to right, transparent 0 calc(10% - 1px), rgba(137, 197, 69, 0.5) calc(10% - 1px) 10%), linear-gradient(to right, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.08));
 }
 
 .vote-pop:popover-open {

@@ -340,6 +340,36 @@ async def remove_from_library(
     )
 
 
+@app.post("/library/remove-selected")
+async def remove_selected_from_library(
+    request: Request,
+    session: SessionDep,
+    profile_id: int = Form(...),
+    paper_ids: list[int] = Form([]),
+    active_tab: str = Form("unranked"),
+):
+    if paper_ids:
+        for model in (Library, Score, Vote, Bookmark):
+            for row in session.exec(
+                select(model).where(
+                    model.profile_id == profile_id,
+                    model.paper_id.in_(paper_ids),
+                )
+            ).all():
+                session.delete(row)
+        session.commit()
+
+    return templates.TemplateResponse(
+        request,
+        "_library.html",
+        library_context(
+            session,
+            session.get(Profile, profile_id),
+            active_tab=active_tab,
+        ),
+    )
+
+
 @app.post("/profiles/delete")
 async def delete_profile(
     session: SessionDep,
@@ -425,3 +455,28 @@ async def vote(
         session.add(Vote(profile_id=profile_id, paper_id=paper_id, score=score))
     session.commit()
     return Response(status_code=204)
+
+
+@app.post("/votes/delete")
+async def delete_vote(
+    request: Request,
+    session: SessionDep,
+    profile_id: int = Form(...),
+    paper_id: int = Form(...),
+    active_tab: str = Form("ranked"),
+):
+    existing = session.exec(
+        select(Vote).where(Vote.profile_id == profile_id, Vote.paper_id == paper_id)
+    ).first()
+    if existing:
+        session.delete(existing)
+        session.commit()
+    return templates.TemplateResponse(
+        request,
+        "_library.html",
+        library_context(
+            session,
+            session.get(Profile, profile_id),
+            active_tab=active_tab,
+        ),
+    )

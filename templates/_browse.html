@@ -37,15 +37,13 @@
         {% if page > 1 %}
         <button type="button"
             hx-get="/papers/browse?profile_id={{ profile.id }}&category={{ category }}&start={{ start }}&end={{ end }}&per_page={{ per_page }}&page={{ page - 1 }}"
-            hx-disabled-elt="this"
-            hx-target="#browse-results" hx-swap="innerHTML">&#12296; prev</button>
+            hx-disabled-elt="this" hx-target="#browse-results" hx-swap="innerHTML">&#12296; prev</button>
         {% endif %}
         <span>page {{ page }} / {{ total_pages }}</span>
         {% if has_next %}
         <button type="button"
             hx-get="/papers/browse?profile_id={{ profile.id }}&category={{ category }}&start={{ start }}&end={{ end }}&per_page={{ per_page }}&page={{ page + 1 }}"
-            hx-disabled-elt="this"
-            hx-target="#browse-results" hx-swap="innerHTML">next &#12297;</button>
+            hx-disabled-elt="this" hx-target="#browse-results" hx-swap="innerHTML">next &#12297;</button>
         {% endif %}
     </nav>
 </form>

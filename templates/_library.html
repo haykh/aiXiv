@@ -12,14 +12,21 @@
         {% if not unranked %}
         <p class="empty">No unranked papers — switch to the <strong>browse arXiv</strong> tab to import some.</p>
         {% else %}
-        <form hx-post="/digest/rank" hx-target="#library" hx-swap="innerHTML"
-            hx-disabled-elt="find button[type='submit']">
+        <form>
             <input type="hidden" name="profile_id" value="{{ profile.id }}">
+            <input type="hidden" name="active_tab" value="unranked">
             <div class="toolbar">
                 <button type="button" class="small secondary outline" onclick="toggleAll(this)">select all</button>
-                <button type="submit" class="small">
+                <button type="button" class="small" hx-post="/digest/rank" hx-include="closest form"
+                    hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this">
                     <span class="when-idle">rank selected</span>
                     <span class="when-busy" aria-busy="true">ranking...</span>
+                </button>
+                <button type="button" class="small secondary outline" hx-post="/library/remove-selected"
+                    hx-include="closest form" hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this"
+                    hx-confirm="Remove selected papers from library?">
+                    <span class="when-idle">delete selected</span>
+                    <span class="when-busy" aria-busy="true">deleting...</span>
                 </button>
             </div>
             {% for p in unranked %}
@@ -59,25 +66,51 @@
                 </select>
             </label>
         </form>
+        <form id="ranked-remove-form" hx-post="/library/remove-selected" hx-target="#library" hx-swap="innerHTML"
+            hx-disabled-elt="find button[type='submit']" hx-confirm="Remove selected papers from library?">
+            <input type="hidden" name="profile_id" value="{{ profile.id }}">
+            <input type="hidden" name="active_tab" value="ranked">
+            <div class="toolbar">
+                <button type="button" class="small secondary outline"
+                    onclick="toggleAssociated('ranked-remove-form')">select all</button>
+                <button type="submit" class="small secondary outline">
+                    <span class="when-idle">delete selected</span>
+                    <span class="when-busy" aria-busy="true">deleting...</span>
+                </button>
+            </div>
+        </form>
         {% for score, paper in ranked %}
         <article class="ranked">
             <div class="scorecol">
                 <div class="score ai" title="AI relevance">{{ score.score | round | int }}</div>
-                <button type="button" class="score vote" popovertarget="vote-{{ paper.id }}"
-                    title="your rating — click to set">
-                    {{ votes[paper.id] if paper.id in votes else "-" }}
-                </button>
+                <div class="vote-controls">
+                    <button type="button" class="score vote" popovertarget="vote-{{ paper.id }}"
+                        title="your rating — click to set">
+                        {{ votes[paper.id] if paper.id in votes else "-" }}
+                    </button>
+                    <button type="button" class="vote-clear secondary outline" hx-post="/votes/delete"
+                        hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this" title="Remove your rating"
+                        {{ "hidden" if paper.id not in votes }} aria-label="Remove your rating"
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}", "active_tab": "ranked"}'>{{
+                        icon("x") }}</button>
+                </div>
                 <div class="vote-pop" popover id="vote-{{ paper.id }}">
                     <input type="range" name="score" min="0" max="10" step="1" value="{{ votes.get(paper.id, 5) }}"
-                        oninput="rateInput(this)" hx-post="/votes" hx-trigger="change" hx-swap="none"
+                        list="vote-ticks-{{ paper.id }}" oninput="rateInput(this)" hx-post="/votes" hx-trigger="change"
+                        hx-swap="none"
                         hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}"}'>
-                    <output>{{ votes.get(paper.id, 5) }}</output>
+                    <datalist id="vote-ticks-{{ paper.id }}">
+                        {% for n in range(11) %}<option value="{{ n }}">{% endfor %}
+                    </datalist>
                 </div>
             </div>
             <div class="body">
-                <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
-                <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif
-                    %}</p>
+                <label class="pick">
+                    <input type="checkbox" name="paper_ids" value="{{ paper.id }}" form="ranked-remove-form">
+                    <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
+                </label>
+                <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{%
+                    endif %}</p>
                 <p class="cats">{{ paper.categories | join(" · ") }}</p>
                 <p class="abstract">{{ paper.abstract | latex }}</p>
                 <p class="reason">{{ score.reason }}</p>

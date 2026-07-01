@@ -8,7 +8,7 @@
             <option value="">— couldn't reach Ollama at this URL —</option>
             {% endif %}
             {% for m in models %}
-            <option value="{{ m }}" {{ "selected" if m == llm_model }}>{{ m }}</option>
+            <option value="{{ m }}" {{ "selected" if m==llm_model }}>{{ m }}</option>
             {% endfor %}
         </select>
     </label>

@@ -41,126 +41,141 @@
             icon("settings") }}</button>
     </header>
 
-    {% if not profile %}
-    <p class="empty">No profile yet — create one to get started.</p>
-    {% else %}
+    <main>
 
-    <section class="profile-summary">
-        <h1>{{ profile.name }}</h1>
-        <p>{{ profile.summary_profile }}</p>
-        <p class="keywords">{% for k in profile.keywords %}<span>{{ k }}</span>{% endfor %}</p>
-    </section>
+        {% if not profile %}
+        <p class="empty">No profile yet — create one to get started.</p>
+        {% else %}
 
-    <div class="view-tabs">
-        <input type="radio" name="view" id="view-library" checked>
-        <input type="radio" name="view" id="view-browse">
-        <div class="view-bar">
-            <label for="view-library">library</label>
-            <label for="view-browse">browse arXiv</label>
-        </div>
+        <section class="profile-summary">
+            <h1>{{ profile.name }}</h1>
+            <p>{{ profile.summary_profile }}</p>
+            <p class="keywords">{% for k in profile.keywords %}<span>{{ k }}</span>{% endfor %}</p>
+        </section>
 
-        <div class="view-panel view-browse arxiv">
-            <form class="browse-form" hx-get="/papers/browse" hx-target="#browse-results" hx-swap="innerHTML"
-                hx-disabled-elt="find button[type='submit']">
-                <input type="hidden" name="profile_id" value="{{ profile.id }}">
-                <input type="text" name="category" list="arxiv-cats" placeholder="category, e.g. astro-ph.HE" required
-                    autocomplete="off">
-                <input type="date" name="start" required aria-label="from">
-                <input type="date" name="end" required aria-label="to">
-                <select name="per_page" aria-label="results per page">
-                    <option value="10">10</option>
-                    <option value="20" selected>20</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-                <button type="submit">
-                    <span class="when-idle">Browse</span>
-                    <span class="when-busy" aria-busy="true">browsing...</span>
-                </button>
-                <div class="date-presets">
-                    <button type="button" class="secondary outline" onclick="setRange(1)">last day</button>
-                    <button type="button" class="secondary outline" onclick="setRange(7)">last week</button>
-                    <button type="button" class="secondary outline" onclick="setRange(30)">last month</button>
-                    <button type="button" class="secondary outline" onclick="setRange(90)">last 3 months</button>
-                </div>
-            </form>
-            <div id="browse-results"></div>
-        </div>
-
-        <div class="view-panel view-library">
-            <section id="library">
-                {% include "_library.html" %}
-            </section>
-        </div>
-    </div>
-    {% endif %}
-
-    <datalist id="arxiv-cats">
-        {% for c in categories %}<option value="{{ c }}">{% endfor %}
-    </datalist>
-
-    <dialog id="settings-dlg">
-        <article>
-            <header>
-                <strong>settings</strong>
-                <button aria-label="Close" rel="prev" onclick="closeSettings()"></button>
-            </header>
-            <div id="settings-body">
-                <!-- only close on the form's OWN request; child hx-get's bubble here too -->
-                <form hx-post="/settings"
-                    hx-on::after-request="if(event.target === event.currentTarget && event.detail.successful) closeSettings()">
-                    <div class="setting">
-                        <span class="setting-icon">{{ icon("bot") }}</span>
-                        <label class="setting-body">
-                            <strong>Provider</strong>
-                            <span class="setting-desc">Which LLM backend handles analysis and ranking.</span>
-                            <select name="llm_provider" hx-get="/settings/fields" hx-target="#provider-fields"
-                                hx-trigger="change">
-                                <option value="ollama" {% if settings.llm_provider=="ollama" %}selected{% endif %}>
-                                    Ollama
-                                    (local)</option>
-                                <option value="claude" {% if settings.llm_provider=="claude" %}selected{% endif %}>
-                                    Claude
-                                </option>
-                                <option value="openai" {% if settings.llm_provider=="openai" %}selected{% endif %}>
-                                    OpenAI
-                                </option>
-                            </select>
-                        </label>
-                    </div>
-                    <div id="provider-fields"></div>
-                    <footer class="modal-footer">
-                        <button type="button" class="secondary" onclick="closeSettings()">cancel</button>
-                        <button type="submit">save</button>
-                    </footer>
-                </form>
+        <div class="view-tabs">
+            <input type="radio" name="view" id="view-library" checked>
+            <input type="radio" name="view" id="view-browse">
+            <div class="view-bar">
+                <label for="view-library">library</label>
+                <label for="view-browse">browse arXiv</label>
             </div>
-        </article>
-    </dialog>
 
-    <dialog id="new-profile-dlg">
-        <article>
-            <header>
-                <strong>new profile</strong>
-                <button aria-label="Close" rel="prev" onclick="closeNewProfile()"></button>
-            </header>
-            <div id="profile-form-body">
-                <form hx-post="/profiles/preview" hx-target="#profile-form-body" hx-swap="innerHTML"
+            <div class="view-panel view-browse arxiv">
+                <form class="browse-form" hx-get="/papers/browse" hx-target="#browse-results" hx-swap="innerHTML"
                     hx-disabled-elt="find button[type='submit']">
-                    <input name="name" placeholder="profile name" required>
-                    <textarea name="raw_text" rows="8"
-                        placeholder="Paste your bio, published abstracts, interests, keywords..." required></textarea>
-                    <footer class="modal-footer">
-                        <button type="button" class="secondary" onclick="closeNewProfile()">cancel</button>
-                        <button type="submit">
-                            <span class="when-idle">preview analysis</span>
-                            <span class="when-busy" aria-busy="true">analyzing...</span>
-                        </button>
-                    </footer>
+                    <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                    <input type="text" name="category" list="arxiv-cats" placeholder="category, e.g. astro-ph.HE"
+                        required autocomplete="off">
+                    <input type="date" name="start" required aria-label="from">
+                    <input type="date" name="end" required aria-label="to">
+                    <select name="per_page" aria-label="results per page">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <button type="submit">
+                        <span class="when-idle">Browse</span>
+                        <span class="when-busy" aria-busy="true">browsing...</span>
+                    </button>
+                    <div class="date-presets">
+                        <button type="button" class="secondary outline" onclick="setRange(1)">last day</button>
+                        <button type="button" class="secondary outline" onclick="setRange(7)">last week</button>
+                        <button type="button" class="secondary outline" onclick="setRange(30)">last month</button>
+                        <button type="button" class="secondary outline" onclick="setRange(90)">last 3 months</button>
+                    </div>
                 </form>
+                <div id="browse-results"></div>
             </div>
-        </article>
-    </dialog>
+
+            <div class="view-panel view-library">
+                <section id="library">
+                    {% include "_library.html" %}
+                </section>
+            </div>
+        </div>
+        {% endif %}
+
+        <datalist id="arxiv-cats">
+            {% for c in categories %}<option value="{{ c }}">{% endfor %}
+        </datalist>
+
+        <dialog id="settings-dlg">
+            <article>
+                <header>
+                    <strong>settings</strong>
+                    <button aria-label="Close" rel="prev" onclick="closeSettings()"></button>
+                </header>
+                <div id="settings-body">
+                    <!-- only close on the form's OWN request; child hx-get's bubble here too -->
+                    <form hx-post="/settings"
+                        hx-on::after-request="if(event.target === event.currentTarget && event.detail.successful) closeSettings()">
+                        <div class="setting">
+                            <span class="setting-icon">{{ icon("bot") }}</span>
+                            <label class="setting-body">
+                                <strong>Provider</strong>
+                                <span class="setting-desc">Which LLM backend handles analysis and ranking.</span>
+                                <select name="llm_provider" hx-get="/settings/fields" hx-target="#provider-fields"
+                                    hx-trigger="change">
+                                    <option value="ollama" {% if settings.llm_provider=="ollama" %}selected{% endif %}>
+                                        Ollama
+                                        (local)</option>
+                                    <option value="claude" {% if settings.llm_provider=="claude" %}selected{% endif %}>
+                                        Claude
+                                    </option>
+                                    <option value="openai" {% if settings.llm_provider=="openai" %}selected{% endif %}>
+                                        OpenAI
+                                    </option>
+                                </select>
+                            </label>
+                        </div>
+                        <div id="provider-fields"></div>
+                        <footer class="modal-footer">
+                            <button type="button" class="secondary" onclick="closeSettings()">cancel</button>
+                            <button type="submit">save</button>
+                        </footer>
+                    </form>
+                </div>
+            </article>
+        </dialog>
+
+        <dialog id="new-profile-dlg">
+            <article>
+                <header>
+                    <strong>new profile</strong>
+                    <button aria-label="Close" rel="prev" onclick="closeNewProfile()"></button>
+                </header>
+                <div id="profile-form-body">
+                    <form hx-post="/profiles/preview" hx-target="#profile-form-body" hx-swap="innerHTML"
+                        hx-disabled-elt="find button[type='submit']">
+                        <input name="name" placeholder="profile name" required>
+                        <textarea name="raw_text" rows="8"
+                            placeholder="Paste your bio, published abstracts, interests, keywords..."
+                            required></textarea>
+                        <footer class="modal-footer">
+                            <button type="button" class="secondary" onclick="closeNewProfile()">cancel</button>
+                            <button type="submit">
+                                <span class="when-idle">preview analysis</span>
+                                <span class="when-busy" aria-busy="true">analyzing...</span>
+                            </button>
+                        </footer>
+                    </form>
+                </div>
+            </article>
+        </dialog>
+    </main>
+
+    <footer class="site-footer">
+        <small>
+            aiXiv · personalized arXiv triage for your research profile
+        </small>
+        <a class="git-link" href="https://example.com/aixiv.git" target="_blank" rel="noopener noreferrer"
+            aria-label="Git repository">
+            {{ icon("git-branch") }}
+            <span>git</span>
+        </a>
+    </footer>
 
     <script>
         const renderMath = (root) => {
@@ -179,10 +194,16 @@
             const allOn = [...boxes].every(b => b.checked);
             boxes.forEach(b => b.checked = !allOn);
         }
+        const toggleAssociated = (formId) => {
+            const boxes = document.querySelectorAll(`input[type="checkbox"][form="${formId}"]:not(:disabled)`);
+            const allOn = [...boxes].every(b => b.checked);
+            boxes.forEach(b => b.checked = !allOn);
+        }
         const rateInput = (input) => {
             const pop = input.closest(".vote-pop");
-            pop.querySelector("output").textContent = input.value;          // number inside the popover
-            document.querySelector(`[popovertarget="${pop.id}"]`).textContent = input.value;  // the card's vote number
+            const score = document.querySelector(`[popovertarget="${pop.id}"]`);
+            score.textContent = input.value;
+            score.closest(".vote-controls").querySelector(".vote-clear").hidden = false;
         };
         document.addEventListener("DOMContentLoaded", () => renderMath(document.body));
         document.body.addEventListener("htmx:afterSwap", (e) => renderMath(e.target));
