@@ -4,12 +4,14 @@
 $accent-color: #f27171;
 $ranked-color: #89c545;
 $unranked-color: #407fec;
+$bookmark-color: #e0a458;
 $arxiv-color: $accent-color;
 
 $ctype-colors: (
     ranked: $ranked-color,
     unranked: $unranked-color,
     arxiv: $arxiv-color,
+    bookmarked: $bookmark-color,
 );
 
 @mixin primary-vars($color) {
@@ -61,6 +63,7 @@ $ctype-colors: (
     --pico-card-background-color: #0d1117;
     --pico-card-border-color: #3d444d;
     --pico-primary-inverse: #ffffff;
+    --bookmark-color: #{$bookmark-color};
 }
 
 /* ───────────────────────── layout ───────────────────────── */
@@ -403,6 +406,15 @@ button.small {
     border-bottom-color: #{$ranked-color};
 }
 
+#tab-bookmarked:checked~.tab-bar label[for="tab-bookmarked"] {
+    color: #{$bookmark-color};
+    border-bottom-color: #{$bookmark-color};
+}
+
+#tab-bookmarked:checked~.tab-panel.bookmarked {
+    display: block;
+}
+
 #tab-unranked:checked~.tab-panel.unranked,
 #tab-ranked:checked~.tab-panel.ranked {
     display: block;
@@ -417,6 +429,7 @@ button.small {
 
 /* ───────────────────────── paper cards ───────────────────────── */
 article {
+    position: relative;
     padding: 0.75rem 1rem;
     margin: 0.6rem 0;
     border: 1px solid var(--pico-card-border-color);
@@ -480,6 +493,42 @@ article.imported {
     padding-left: 0.8rem;
     margin: 0;
 }
+
+/* bookmark */
+.bookmark-btn {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.5rem;
+    width: auto;
+    margin: 0;
+    padding: 0.15rem;
+    background: none;
+    border: none;
+    color: var(--pico-muted-color);
+    opacity: 0.4;
+    cursor: pointer;
+}
+
+.bookmark-btn:hover {
+    opacity: 0.85;
+}
+
+.bookmark-btn svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    stroke-dasharray: 3 2;
+}
+
+.bookmark-btn.on {
+    opacity: 1;
+    color: var(--bookmark-color);
+}
+
+.bookmark-btn.on svg {
+    fill: currentColor;
+    stroke-dasharray: none;
+}
+
 
 /* ranked card: integer score on the side */
 article.ranked {

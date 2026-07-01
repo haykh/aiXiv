@@ -1,10 +1,12 @@
 <div class="tabs">
     <input type="radio" name="libtab" id="tab-unranked" {% if active_tab !="ranked" %}checked{% endif %}>
     <input type="radio" name="libtab" id="tab-ranked" {% if active_tab=="ranked" %}checked{% endif %}>
+    <input type="radio" name="libtab" id="tab-bookmarked" {% if active_tab=="bookmarked" %}checked{% endif %}>
 
     <div class="tab-bar">
         <label for="tab-unranked">unranked · {{ unranked|length }}</label>
         <label for="tab-ranked">ranked · {{ ranked|length }}</label>
+        <label for="tab-bookmarked">bookmarked · {{ bookmarked|length }}</label>
     </div>
 
     {# ───────────── unranked ───────────── #}
@@ -16,7 +18,8 @@
             <input type="hidden" name="profile_id" value="{{ profile.id }}">
             <input type="hidden" name="active_tab" value="unranked">
             <div class="toolbar">
-                <button type="button" class="small secondary outline" onclick="toggleAll(this)">select all</button>
+                <button type="button" class="icon-btn secondary outline" onclick="toggleAll(this)" title="Select papers"
+                    aria-label="Select all">{{ icon("list-checks") }}</button>
                 <button type="button" class="small" hx-post="/digest/rank" hx-include="closest form"
                     hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this">
                     <span class="when-idle">rank selected</span>
@@ -31,17 +34,19 @@
             </div>
             {% for p in unranked %}
             <article class="unranked">
+                {% with paper = p, tab = "unranked" %}{% include "_bookmark_btn.html" %}{% endwith %}
                 <label class="pick">
-                    <input type="checkbox" name="paper_ids" value="{{ p.id }}">
+                    <input type="checkbox" name="paper_ids" value="{{ p.id }}" {% if p.id in bookmark_ids
+                        %}data-bookmarked="1" {% endif %}>
                     <a class="title" href="{{ p.url }}" target="_blank">{{ p.title | latex }}</a>
                 </label>
                 <p class="authors">{{ p.authors[:6] | join(", ") }}{% if p.authors|length > 6 %}, et al.{% endif %}</p>
                 <p class="cats">{{ p.categories | join(" · ") }}</p>
                 <p class="abstract">{{ p.abstract | latex }}</p>
                 <div class="card-actions">
-                    <button type="button" class="icon-btn danger secondary outline"
-                        hx-post="/library/remove-selected" hx-target="#library" hx-disabled-elt="this"
-                        hx-confirm="Remove from library?" title="Remove from library" aria-label="Remove from library"
+                    <button type="button" class="icon-btn danger secondary outline" hx-post="/library/remove-selected"
+                        hx-target="#library" hx-disabled-elt="this" hx-confirm="Remove from library?"
+                        title="Remove from library" aria-label="Remove from library"
                         hx-vals='{"profile_id": "{{ profile.id }}", "paper_ids": "{{ p.id }}", "active_tab": "unranked"}'>{{
                         icon("trash-2") }}</button>
                 </div>
@@ -71,8 +76,8 @@
             <input type="hidden" name="profile_id" value="{{ profile.id }}">
             <input type="hidden" name="active_tab" value="ranked">
             <div class="toolbar">
-                <button type="button" class="small secondary outline"
-                    onclick="toggleAll('ranked-remove-form')">select all</button>
+                <button type="button" class="icon-btn secondary outline" onclick="toggleAll('ranked-remove-form')"
+                    title="Select papers" aria-label="Select all">{{ icon("list-checks") }}</button>
                 <button type="submit" class="small secondary outline">
                     <span class="when-idle">delete selected</span>
                     <span class="when-busy" aria-busy="true">deleting...</span>
@@ -81,6 +86,7 @@
         </form>
         {% for score, paper in ranked %}
         <article class="ranked">
+            {% with tab = "ranked" %}{% include "_bookmark_btn.html" %}{% endwith %}
             <div class="scorecol">
                 <div class="score ai" title="AI relevance">{{ score.score | round | int }}</div>
                 <div class="vote-controls">
@@ -97,8 +103,7 @@
                 <div class="vote-pop" popover id="vote-{{ paper.id }}">
                     <input type="range" name="score" min="0" max="10" step="1" value="{{ votes.get(paper.id, 5) }}"
                         list="vote-ticks-{{ paper.id }}" oninput="rateInput(this)" hx-post="/votes" hx-trigger="change"
-                        hx-swap="none"
-                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}"}'>
+                        hx-swap="none" hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}"}'>
                     <datalist id="vote-ticks-{{ paper.id }}">
                         {% for n in range(11) %}<option value="{{ n }}">{% endfor %}
                     </datalist>
@@ -106,7 +111,8 @@
             </div>
             <div class="body">
                 <label class="pick">
-                    <input type="checkbox" name="paper_ids" value="{{ paper.id }}" form="ranked-remove-form">
+                    <input type="checkbox" name="paper_ids" value="{{ paper.id }}" form="ranked-remove-form" {% if
+                        paper.id in bookmark_ids %}data-bookmarked="1" {% endif %}>
                     <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
                 </label>
                 <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{%
@@ -118,9 +124,9 @@
                 <div class="card-actions">
                     <button type="button" class="small secondary outline" hx-post="/scores/delete" hx-target="#library"
                         hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}"}'>unrank</button>
-                    <button type="button" class="icon-btn danger secondary outline"
-                        hx-post="/library/remove-selected" hx-target="#library" hx-confirm="Remove from library?"
-                        title="Remove from library" aria-label="Remove from library"
+                    <button type="button" class="icon-btn danger secondary outline" hx-post="/library/remove-selected"
+                        hx-target="#library" hx-confirm="Remove from library?" title="Remove from library"
+                        aria-label="Remove from library"
                         hx-vals='{"profile_id": "{{ profile.id }}", "paper_ids": "{{ paper.id }}", "active_tab": "ranked"}'>{{
                         icon("trash-2") }}</button>
                 </div>
@@ -129,4 +135,23 @@
         {% endfor %}
         {% endif %}
     </div>
+
+    {# ───────────── bookmarked ───────────── #}
+    <div class="tab-panel bookmarked">
+        {% if not bookmarked %}
+        <p class="empty">No bookmarks yet — tap the bookmark on any paper to save it here.</p>
+        {% else %}
+        {% for paper in bookmarked %}
+        <article class="bookmarked">
+            {% with tab = "bookmarked" %}{% include "_bookmark_btn.html" %}{% endwith %}
+            <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
+            <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif %}
+            </p>
+            <p class="cats">{{ paper.categories | join(" · ") }}</p>
+            <p class="abstract">{{ paper.abstract | latex }}</p>
+        </article>
+        {% endfor %}
+        {% endif %}
+    </div>
+
 </div>

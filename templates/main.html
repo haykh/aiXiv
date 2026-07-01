@@ -198,9 +198,19 @@
         const toggleAll = (ref) => {
             const form = typeof ref === "string" ? document.getElementById(ref) : ref.closest("form");
             const boxes = [...form.elements].filter(el => el.type === "checkbox" && !el.disabled);
-            const allOn = boxes.every(b => b.checked);
-            boxes.forEach(b => b.checked = !allOn);
-        }
+            const book = boxes.filter(b => b.dataset.bookmarked);
+            const nonBook = boxes.filter(b => !b.dataset.bookmarked);
+            const allOn = boxes.length && boxes.every(b => b.checked);
+            const nonBookOnly = nonBook.length && nonBook.every(b => b.checked) && book.every(b => !b.checked);
+
+            if (allOn) {
+                boxes.forEach(b => b.checked = false);                       // all selected -> clear
+            } else if (nonBook.length && !nonBookOnly) {
+                boxes.forEach(b => b.checked = !b.dataset.bookmarked);       // -> only non-bookmarked
+            } else {
+                boxes.forEach(b => b.checked = true);                        // -> everything (incl. bookmarks)
+            }
+        };
         const rateInput = (input) => {
             const pop = input.closest(".vote-pop");
             const score = document.querySelector(`[popovertarget="${pop.id}"]`);

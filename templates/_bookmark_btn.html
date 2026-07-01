@@ -1,0 +1,6 @@
+<button type="button" class="bookmark-btn {{ 'on' if paper.id in bookmark_ids }}" hx-post="/bookmarks/toggle"
+    hx-target="#library" hx-disabled-elt="this" aria-label="Toggle bookmark"
+    title="{{ 'Remove bookmark' if paper.id in bookmark_ids else 'Bookmark' }}"
+    hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}", "active_tab": "{{ tab }}"}'>
+    {{ icon("bookmark") }}
+</button>

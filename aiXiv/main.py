@@ -92,6 +92,13 @@ def library_context(
         .where(Library.profile_id == profile.id, Score.id == None)  # noqa: E711
         .order_by(Paper.published_at.desc())
     ).all()
+    bookmarked = session.exec(
+        select(Paper)
+        .join(Bookmark, Bookmark.paper_id == Paper.id)
+        .where(Bookmark.profile_id == profile.id)
+        .order_by(Bookmark.created_at.desc())
+    ).all()
+    bookmark_ids = {p.id for p in bookmarked}
     return {
         "profile": profile,
         "ranked": ranked,
@@ -100,6 +107,8 @@ def library_context(
         "vote_count": len(votes),
         "sort": sort,
         "active_tab": active_tab,
+        "bookmarked": bookmarked,
+        "bookmark_ids": bookmark_ids,
     }
 
 
@@ -488,4 +497,30 @@ async def refine_route(
         request,
         "_profile_summary.html",
         {"profile": profile, "vote_count": len(votes), "open": True},
+    )
+
+
+@app.post("/bookmarks/toggle")
+async def toggle_bookmark(
+    request: Request,
+    session: SessionDep,
+    profile_id: int = Form(...),
+    paper_id: int = Form(...),
+    active_tab: str = Form("unranked"),
+):
+    existing = session.exec(
+        select(Bookmark).where(
+            Bookmark.profile_id == profile_id, Bookmark.paper_id == paper_id
+        )
+    ).first()
+    if existing:
+        session.delete(existing)
+    else:
+        session.add(Bookmark(profile_id=profile_id, paper_id=paper_id))
+    session.commit()
+    return library_response(
+        request,
+        session,
+        profile_id,
+        active_tab=active_tab,
     )

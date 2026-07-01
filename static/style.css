@@ -2858,6 +2858,19 @@ textarea,
   --pico-form-element-focus-color: rgba(242, 113, 113, 0.25);
 }
 
+.bookmarked {
+  --pico-primary: #e0a458;
+  --pico-primary-hover: rgb(227.9924242424, 175.7196969697, 109.5075757576);
+  --pico-primary-border: rgb(209.7901515152, 139.8282531194, 51.2098484848);
+  --pico-primary-underline: #e0a458;
+  --pico-primary-background: rgb(192.7412878788, 126.5725044563, 42.7587121212);
+  --pico-primary-hover-background: rgb(151.0011363636, 99.1618983957, 33.4988636364);
+  --pico-primary-hover-border: rgb(171.8712121212, 112.867201426, 38.1287878788);
+  --pico-primary-focus: rgba(224, 164, 88, 0.25);
+  --pico-form-element-active-border-color: rgb(209.7901515152, 139.8282531194, 51.2098484848);
+  --pico-form-element-focus-color: rgba(224, 164, 88, 0.25);
+}
+
 /* ───────────────────────── theme tokens ───────────────────────── */
 :root {
   --pico-font-family-monospace:
@@ -2876,6 +2889,7 @@ textarea,
   --pico-card-background-color: #0d1117;
   --pico-card-border-color: #3d444d;
   --pico-primary-inverse: #ffffff;
+  --bookmark-color: #e0a458;
 }
 
 /* ───────────────────────── layout ───────────────────────── */
@@ -3218,6 +3232,15 @@ button.small {
   border-bottom-color: #89c545;
 }
 
+#tab-bookmarked:checked ~ .tab-bar label[for=tab-bookmarked] {
+  color: #e0a458;
+  border-bottom-color: #e0a458;
+}
+
+#tab-bookmarked:checked ~ .tab-panel.bookmarked {
+  display: block;
+}
+
 #tab-unranked:checked ~ .tab-panel.unranked,
 #tab-ranked:checked ~ .tab-panel.ranked {
   display: block;
@@ -3232,6 +3255,7 @@ button.small {
 
 /* ───────────────────────── paper cards ───────────────────────── */
 article {
+  position: relative;
   padding: 0.75rem 1rem;
   margin: 0.6rem 0;
   border: 1px solid var(--pico-card-border-color);
@@ -3294,6 +3318,41 @@ article.imported {
   border-left: 2px solid var(--pico-card-border-color);
   padding-left: 0.8rem;
   margin: 0;
+}
+
+/* bookmark */
+.bookmark-btn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  width: auto;
+  margin: 0;
+  padding: 0.15rem;
+  background: none;
+  border: none;
+  color: var(--pico-muted-color);
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+.bookmark-btn:hover {
+  opacity: 0.85;
+}
+
+.bookmark-btn svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  stroke-dasharray: 3 2;
+}
+
+.bookmark-btn.on {
+  opacity: 1;
+  color: var(--bookmark-color);
+}
+
+.bookmark-btn.on svg {
+  fill: currentColor;
+  stroke-dasharray: none;
 }
 
 /* ranked card: integer score on the side */
