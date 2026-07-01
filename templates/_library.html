@@ -24,11 +24,7 @@
                     <span class="i-some">{{ icon("list-todo") }}</span>
                     <span class="i-all">{{ icon("check-check") }}</span>
                 </button>
-                <button type="button" class="small" hx-post="/digest/rank" hx-include="closest form"
-                    hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this">
-                    <span class="when-idle">rank selected</span>
-                    <span class="when-busy" aria-busy="true">ranking...</span>
-                </button>
+                <button type="button" class="small" onclick="startRanking(this)">rank selected</button>
                 <button type="button" class="small secondary outline" hx-post="/library/remove-selected"
                     hx-include="closest form" hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this"
                     hx-confirm="Remove selected papers from library?">

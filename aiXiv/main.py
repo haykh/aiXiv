@@ -1,3 +1,4 @@
+import json
 import math
 from datetime import datetime
 from pathlib import Path
@@ -5,20 +6,21 @@ from functools import lru_cache
 from contextlib import asynccontextmanager
 
 from markupsafe import Markup
-from fastapi import FastAPI, Request, Form, Response
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi import FastAPI, Request, Form, Response, Query
+from fastapi.responses import RedirectResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlmodel import select
+from sqlmodel import select, Session
 
 from aiXiv import __version__
 from aiXiv.defaults import Defaults
-from aiXiv.database.db import initialize_db, SessionDep, get_settings
+from aiXiv.database.db import initialize_db, SessionDep, get_settings, engine
 from aiXiv.database.tables import Profile, Score, Paper, Library, Vote, Bookmark
 from aiXiv.utils.latex2html import latex_to_html
 from aiXiv.utils.timeago import timeago
+from aiXiv.llm import get_llm_client
 from aiXiv.llm.profile import analyze_text, save_profile, refine_profile
-from aiXiv.llm.papers import rank_papers
+from aiXiv.llm.papers import rank_one_paper
 from aiXiv.llm.ollama import OllamaClient
 from aiXiv.arxiv.arxiv import fetch_from_arxiv, fetch_from_arxiv_by_ids, store_papers
 from aiXiv.arxiv.categories import ArxivCategory
@@ -366,18 +368,59 @@ async def library(
     )
 
 
-@app.post("/digest/rank")
-async def rank_route(
-    request: Request,
-    session: SessionDep,
-    profile_id: int = Form(...),
-    paper_ids: list[int] = Form([]),
-):
-    profile = session.get(Profile, profile_id)
-    if paper_ids:
-        papers = session.exec(select(Paper).where(Paper.id.in_(paper_ids))).all()
-        await rank_papers(profile, papers, session)
-    return library_response(request, session, profile_id, active_tab="ranked")
+def _sse(payload: dict) -> str:
+    """Format one Server-Sent Event line."""
+    return f"data: {json.dumps(payload)}\n\n"
+
+
+@app.get("/digest/rank/stream")
+async def rank_stream(profile_id: int, paper_ids: list[int] = Query(default=[])):
+    """Rank the selected papers one at a time, streaming progress as SSE events.
+
+    Each paper is committed as it's scored (see rank_one_paper), so ranked papers
+    appear in the DB incrementally rather than all at once.
+    """
+
+    async def event_gen():
+        # a dedicated session: the stream outlives the normal request/response cycle
+        with Session(engine) as session:
+            try:
+                profile = session.get(Profile, profile_id)
+                papers = (
+                    session.exec(select(Paper).where(Paper.id.in_(paper_ids))).all()
+                    if paper_ids
+                    else []
+                )
+                client = get_llm_client(get_settings(session))
+            except Exception as exc:
+                yield _sse({"type": "error", "message": str(exc)})
+                yield _sse({"type": "done", "total": 0})
+                return
+
+            total = len(papers)
+            for i, paper in enumerate(papers):
+                # announce the paper about to be ranked (done = number finished so far)
+                yield _sse(
+                    {
+                        "type": "progress",
+                        "done": i,
+                        "total": total,
+                        "title": paper.title,
+                    }
+                )
+                try:
+                    await rank_one_paper(profile, paper, client, session)
+                except Exception as exc:
+                    yield _sse(
+                        {"type": "error", "title": paper.title, "message": str(exc)}
+                    )
+            yield _sse({"type": "done", "total": total})
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/scores/delete")

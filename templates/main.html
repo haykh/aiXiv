@@ -183,6 +183,23 @@
                 <div id="edit-form-body" class="profile-form-body"></div>
             </article>
         </dialog>
+
+        <dialog id="rank-progress-dlg" class="ranked">
+            <article>
+                <header>
+                    <strong>ranking papers</strong>
+                </header>
+                <div class="rank-progress-body">
+                    <div class="rank-progress-main">
+                        <p class="rank-count" id="rank-count">preparing…</p>
+                        <progress id="rank-bar" max="100"></progress>
+                        <p class="rank-title" id="rank-title"></p>
+                    </div>
+                    <button type="button" class="rank-stop" onclick="finishRanking()" title="Stop ranking"
+                        aria-label="Stop ranking">{{ icon("circle-stop") }}</button>
+                </div>
+            </article>
+        </dialog>
     </main>
 
     <footer class="site-footer">
@@ -297,6 +314,60 @@
         };
         const closeEditProfile = () => { editDlg.close(); }
         editDlg.addEventListener("click", (e) => { if (e.target === editDlg) closeEditProfile(); });
+
+        // ranking progress modal: stream per-paper progress over SSE
+        const rankDlg = document.getElementById("rank-progress-dlg");
+        const rankBar = document.getElementById("rank-bar");
+        const rankCount = document.getElementById("rank-count");
+        const rankTitle = document.getElementById("rank-title");
+        let rankES = null;
+        let rankProfileId = null;
+
+        // Esc stops the run cleanly (rather than just dismissing the modal mid-stream)
+        rankDlg.addEventListener("cancel", (e) => { e.preventDefault(); finishRanking(); });
+
+        const startRanking = (btn) => {
+            const form = btn.closest("form");
+            const ids = [...form.querySelectorAll('input[name="paper_ids"]:checked')].map(b => b.value);
+            if (!ids.length) return;
+            rankProfileId = form.querySelector('input[name="profile_id"]').value;
+
+            rankBar.removeAttribute("value");        // indeterminate until the first paper
+            rankCount.textContent = "preparing…";
+            rankTitle.textContent = "";
+            rankDlg.showModal();
+
+            const params = new URLSearchParams({ profile_id: rankProfileId });
+            ids.forEach(id => params.append("paper_ids", id));
+            rankES = new EventSource("/digest/rank/stream?" + params.toString());
+            rankES.onmessage = (e) => {
+                const msg = JSON.parse(e.data);
+                if (msg.type === "progress") {
+                    rankBar.value = msg.total ? Math.round(msg.done / msg.total * 100) : 0;
+                    rankCount.textContent = `ranking ${msg.done + 1} / ${msg.total}`;
+                    rankTitle.textContent = msg.title || "";
+                    renderMath(rankTitle);   // titles may contain $…$ LaTeX
+                } else if (msg.type === "error") {
+                    rankTitle.textContent = "⚠ " + (msg.title || msg.message || "ranking failed");
+                } else if (msg.type === "done") {
+                    rankBar.value = 100;
+                    finishRanking();
+                }
+            };
+            // fires if the connection drops; close() below stops EventSource auto-reconnecting
+            rankES.onerror = () => finishRanking();
+        };
+
+        const finishRanking = () => {
+            if (rankES) {                            // active job: stop it, then refresh the library
+                rankES.close();
+                rankES = null;
+                htmx.ajax("GET", `/library?profile_id=${rankProfileId}&active_tab=ranked`, "#library")
+                    .finally(() => rankDlg.close());
+            } else {
+                rankDlg.close();                     // no job running (preview, or already finished)
+            }
+        };
 
         // profile dropdown: the "+ new profile" entry opens the modal instead of switching
         const onProfileChange = (sel) => {
