@@ -8,7 +8,6 @@ from aiXiv.llm import get_llm_client
 
 
 class PaperScore(BaseModel):
-    arxiv_id: str
     score: float = Field(ge=0, le=10)
     reason: str
 
