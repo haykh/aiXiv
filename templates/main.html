@@ -195,6 +195,15 @@
                 throwOnError: false,
             });
         }
+        // reflect selection state (none / some / all) on the select-all icon
+        const setSelectState = (btn) => {
+            const form = btn.closest("form");
+            const boxes = [...form.elements].filter(el => el.type === "checkbox" && !el.disabled);
+            const n = boxes.filter(b => b.checked).length;
+            btn.dataset.state = n === 0 ? "none" : (n === boxes.length ? "all" : "some");
+        };
+        const refreshSelectStates = () => document.querySelectorAll("#library .select-all").forEach(setSelectState);
+
         const toggleAll = (ref) => {
             const form = typeof ref === "string" ? document.getElementById(ref) : ref.closest("form");
             const boxes = [...form.elements].filter(el => el.type === "checkbox" && !el.disabled);
@@ -210,15 +219,42 @@
             } else {
                 boxes.forEach(b => b.checked = true);                        // -> everything (incl. bookmarks)
             }
+            refreshSelectStates();
         };
+        // keep the icon in sync when boxes are toggled one by one
+        document.body.addEventListener("change", (e) => {
+            if (e.target.matches?.('input[name="paper_ids"]')) refreshSelectStates();
+        });
+
+        // preserve the current selection across a bookmark toggle (which re-renders #library)
+        let selectionBeforeBookmark = null;
+        document.body.addEventListener("htmx:beforeRequest", (e) => {
+            if (e.target.classList?.contains("bookmark-btn")) {
+                selectionBeforeBookmark = [...document.querySelectorAll('#library input[name="paper_ids"]:checked')]
+                    .map(b => b.value);
+            }
+        });
+
         const rateInput = (input) => {
             const pop = input.closest(".vote-pop");
             const score = document.querySelector(`[popovertarget="${pop.id}"]`);
             score.textContent = input.value;
             score.closest(".vote-controls").querySelector(".vote-clear").hidden = false;
         };
-        document.addEventListener("DOMContentLoaded", () => renderMath(document.body));
-        document.body.addEventListener("htmx:afterSwap", (e) => renderMath(e.target));
+        document.addEventListener("DOMContentLoaded", () => { renderMath(document.body); refreshSelectStates(); });
+        document.body.addEventListener("htmx:afterSwap", (e) => {
+            renderMath(e.target);
+            if (e.target.id === "library") {
+                if (selectionBeforeBookmark) {
+                    const keep = new Set(selectionBeforeBookmark);
+                    e.target.querySelectorAll('input[name="paper_ids"]').forEach(b => {
+                        if (keep.has(b.value)) b.checked = true;
+                    });
+                    selectionBeforeBookmark = null;
+                }
+                refreshSelectStates();
+            }
+        });
 
         // date-range presets: fill the browse form's date inputs (end = today)
         const setRange = (days) => {

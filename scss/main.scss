@@ -63,7 +63,6 @@ $ctype-colors: (
     --pico-card-background-color: #0d1117;
     --pico-card-border-color: #3d444d;
     --pico-primary-inverse: #ffffff;
-    --bookmark-color: #{$bookmark-color};
 }
 
 /* ───────────────────────── layout ───────────────────────── */
@@ -148,8 +147,6 @@ input[type="date"] {
     position: relative;
 }
 
-/* make the whole date field clickable (Pico shrinks the picker to a 1rem
-   sliver on the right); also re-centers the popup under the field */
 input[type="date"]::-webkit-calendar-picker-indicator {
     position: absolute;
     inset: 0;
@@ -185,6 +182,16 @@ button.small {
 .icon-btn.danger:hover {
     color: var(--pico-primary);
     border-color: var(--pico-primary);
+}
+
+.select-all span {
+    display: none;
+}
+
+.select-all[data-state="none"] .i-none,
+.select-all[data-state="some"] .i-some,
+.select-all[data-state="all"] .i-all {
+    display: inline-flex;
 }
 
 /* ───────────────────────── top bar ───────────────────────── */
@@ -430,7 +437,7 @@ button.small {
 /* ───────────────────────── paper cards ───────────────────────── */
 article {
     position: relative;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 1.6rem 0.75rem 1rem;
     margin: 0.6rem 0;
     border: 1px solid var(--pico-card-border-color);
 }
@@ -497,8 +504,8 @@ article.imported {
 /* bookmark */
 .bookmark-btn {
     position: absolute;
-    top: 0.4rem;
-    right: 0.5rem;
+    top: -0.65rem;
+    right: 0.7rem;
     width: auto;
     margin: 0;
     padding: 0.15rem;
@@ -514,14 +521,14 @@ article.imported {
 }
 
 .bookmark-btn svg {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.5rem;
+    height: 1.5rem;
     stroke-dasharray: 3 2;
 }
 
 .bookmark-btn.on {
     opacity: 1;
-    color: var(--bookmark-color);
+    color: var(--pico-primary);
 }
 
 .bookmark-btn.on svg {
@@ -530,21 +537,29 @@ article.imported {
 }
 
 
-/* ranked card: integer score on the side */
-article.ranked {
+article.ranked,
+article.bookmarked.scored {
     display: grid;
     grid-template-columns: 3rem 1fr;
     gap: 1rem;
     align-items: start;
 }
 
-article.ranked .score {
+article.ranked .score,
+article.bookmarked.scored .score {
     font-size: 1.7rem;
     font-weight: 700;
     line-height: 1;
     color: var(--pico-primary);
     text-align: center;
     padding-top: 0.15rem;
+}
+
+article.bookmarked.scored .score.vote-static {
+    font-size: 1.1rem;
+    color: var(--pico-muted-color);
+    padding: 0.05rem 0.45rem;
+    border: 1px dashed var(--pico-card-border-color);
 }
 
 .reason {
@@ -728,12 +743,15 @@ article.ranked .score {
 }
 
 @media (max-width: 480px) {
-    article.ranked {
+
+    article.ranked,
+    article.bookmarked.scored {
         grid-template-columns: 1fr;
         gap: 0.25rem;
     }
 
-    article.ranked .score {
+    article.ranked .score,
+    article.bookmarked.scored .score {
         text-align: left;
     }
 }

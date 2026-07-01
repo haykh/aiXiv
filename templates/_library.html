@@ -18,8 +18,12 @@
             <input type="hidden" name="profile_id" value="{{ profile.id }}">
             <input type="hidden" name="active_tab" value="unranked">
             <div class="toolbar">
-                <button type="button" class="icon-btn secondary outline" onclick="toggleAll(this)" title="Select papers"
-                    aria-label="Select all">{{ icon("list-checks") }}</button>
+                <button type="button" class="icon-btn secondary outline select-all" data-state="none"
+                    onclick="toggleAll(this)" title="Select papers" aria-label="Select all">
+                    <span class="i-none">{{ icon("list-checks") }}</span>
+                    <span class="i-some">{{ icon("list-todo") }}</span>
+                    <span class="i-all">{{ icon("check-check") }}</span>
+                </button>
                 <button type="button" class="small" hx-post="/digest/rank" hx-include="closest form"
                     hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this">
                     <span class="when-idle">rank selected</span>
@@ -76,8 +80,12 @@
             <input type="hidden" name="profile_id" value="{{ profile.id }}">
             <input type="hidden" name="active_tab" value="ranked">
             <div class="toolbar">
-                <button type="button" class="icon-btn secondary outline" onclick="toggleAll('ranked-remove-form')"
-                    title="Select papers" aria-label="Select all">{{ icon("list-checks") }}</button>
+                <button type="button" class="icon-btn secondary outline select-all" data-state="none"
+                    onclick="toggleAll('ranked-remove-form')" title="Select papers" aria-label="Select all">
+                    <span class="i-none">{{ icon("list-checks") }}</span>
+                    <span class="i-some">{{ icon("list-todo") }}</span>
+                    <span class="i-all">{{ icon("check-check") }}</span>
+                </button>
                 <button type="submit" class="small secondary outline">
                     <span class="when-idle">delete selected</span>
                     <span class="when-busy" aria-busy="true">deleting...</span>
@@ -142,13 +150,23 @@
         <p class="empty">No bookmarks yet — tap the bookmark on any paper to save it here.</p>
         {% else %}
         {% for paper in bookmarked %}
-        <article class="bookmarked">
+        {% set s = scores.get(paper.id) %}
+        {% set voted = paper.id in votes %}
+        <article class="bookmarked{% if s or voted %} scored{% endif %}">
             {% with tab = "bookmarked" %}{% include "_bookmark_btn.html" %}{% endwith %}
-            <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
-            <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif %}
-            </p>
-            <p class="cats">{{ paper.categories | join(" · ") }}</p>
-            <p class="abstract">{{ paper.abstract | latex }}</p>
+            {% if s or voted %}
+            <div class="scorecol">
+                {% if s %}<div class="score ai" title="AI relevance">{{ s.score | round | int }}</div>{% endif %}
+                {% if voted %}<div class="score vote-static" title="your rating">{{ votes[paper.id] }}</div>{% endif %}
+            </div>
+            {% endif %}
+            <div class="body">
+                <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
+                <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif %}</p>
+                <p class="cats">{{ paper.categories | join(" · ") }}</p>
+                <p class="abstract">{{ paper.abstract | latex }}</p>
+                {% if s %}<p class="reason">{{ s.reason }}</p>{% endif %}
+            </div>
         </article>
         {% endfor %}
         {% endif %}
