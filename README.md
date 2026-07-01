@@ -31,7 +31,7 @@ aiXiv reads a description of your research interests, builds an interest profile
 
 - Python 3.11+
 - Node.js and npm (front-end libraries — HTMX, KaTeX, Lucide icons — are served from `node_modules`, and the stylesheet is compiled from Sass)
-- An LLM backend. **[Ollama](https://ollama.com/) is the only backend currently wired up** (see [Configuration](#configuration)).
+- An LLM backend: a local [Ollama](https://ollama.com/) server, or a logged-in [Claude Code](https://code.claude.com/docs/en/overview) (`claude`) or [Codex](https://developers.openai.com/codex/cli/) (`codex`) CLI (see [Configuration](#configuration)).
 
 ## Setup
 
@@ -44,7 +44,7 @@ pip install -r requirements.txt
 # 2. Front-end dependencies (required — served at runtime from node_modules)
 npm install
 
-# 3. Build the stylesheet (a compiled static/style.css is committed;
+# 3. Build the stylesheet (a compiled static/css/main.css is committed;
 #    run this after editing anything under scss/)
 npm run css
 ```
@@ -61,7 +61,9 @@ Then open the URL it prints (by default <http://127.0.0.1:8000>). The SQLite dat
 
 LLM settings are managed in-app through the **settings** dialog (the gear icon in the top bar) and stored in the database. The relevant options are the provider, the model, and — for Ollama — the API URL.
 
-**Ollama (local).** This is the working backend. Defaults live in [`aiXiv/defaults.py`](aiXiv/defaults.py):
+Every LLM call logs two lines to the server console (`claude-cli ▶ requesting model=…` / `claude-cli ◀ answered by model=…`), reporting both the requested model and the model that actually answered, so you can verify the backend is using what you configured.
+
+**Ollama (local).** Runs against a local Ollama server. Defaults live in [`aiXiv/settings.py`](aiXiv/settings.py):
 
 | Setting        | Default                      |
 | -------------- | ---------------------------- |
@@ -69,21 +71,27 @@ LLM settings are managed in-app through the **settings** dialog (the gear icon i
 | Model          | `gpt-oss:20b`                |
 | Ollama API URL | `http://localhost:11434`     |
 
-Point the API URL at your Ollama instance and pull a model beforehand (e.g. `ollama pull gpt-oss:20b`). 
+Point the API URL at your Ollama instance and pull a model beforehand (e.g. `ollama pull gpt-oss:20b`). The model dropdown lists whatever that server has installed.
 
 > When accessing the Ollama instance running on Windows from the app running on WSL2, use `ip route | grep default | awk '{print $3}'` to determine the host (Windows) ip, and use that instead of the `localhost`.
 
-**Claude / OpenAI.** These providers appear in the settings dialog but are disabled — the client classes are not implemented yet, so selecting them has no effect. Using them requires both the corresponding client code and an API key with billing from the provider's developer console.
+**Claude CLI (subscription).** Shells out to a locally-installed, logged-in [Claude Code](https://code.claude.com/docs/en/overview) CLI (`claude -p`), so it uses your existing Claude subscription instead of an API key. The model field takes an alias (`sonnet`, `haiku`, `opus`) or a full model ID (`claude-opus-4-8`); leave it empty for the CLI's default.
+
+**Codex CLI (subscription).** Same idea with the [Codex](https://developers.openai.com/codex/cli/) CLI (`codex exec`), using your ChatGPT login. The model dropdown is read from the model list codex itself caches (`~/.codex/models_cache.json`); run `codex` once if it's empty.
+
+> The CLI backends are experimental and meant for testing. They spawn one CLI process per request (a ranking run takes several seconds per paper), usage counts against your subscription limits, and driving coding agents this way is an off-label use of those tools.
+
+**Claude / OpenAI (API).** These providers appear in the settings dialog but are disabled — the client classes are not implemented yet. Using them requires both the corresponding client code and an API key with billing from the provider's developer console.
 
 ## Project layout
 
 ```
 aiXiv/
   main.py            FastAPI app: routes and page rendering
-  defaults.py        default settings
+  settings.py        default settings and LLM prompts
   arxiv/             arXiv fetching and category list
   database/          SQLModel tables and DB setup/migrations
-  llm/               LLM abstraction (base, ollama) + profile/paper logic
+  llm/               LLM abstraction (base, ollama, cli) + profile/paper logic
   utils/             LaTeX-to-HTML and "time ago" helpers
 templates/           Jinja2 templates (HTMX-driven fragments)
 scss/ + static/      Sass sources and compiled assets

@@ -1,5 +1,6 @@
 import json
 import math
+import logging
 from datetime import datetime
 from pathlib import Path
 from functools import lru_cache
@@ -22,10 +23,13 @@ from aiXiv.llm import get_llm_client
 from aiXiv.llm.profile import analyze_text, save_profile, refine_profile
 from aiXiv.llm.papers import rank_one_paper
 from aiXiv.llm.ollama import OllamaClient
+from aiXiv.llm.cli import CodexCLIClient
 from aiXiv.arxiv.arxiv import fetch_from_arxiv, fetch_from_arxiv_by_ids, store_papers
 from aiXiv.arxiv.categories import ArxivCategory
 
 root_path = Path(__file__).parent.parent
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     [%(name)s] %(message)s")
 
 
 @asynccontextmanager
@@ -499,6 +503,8 @@ async def settings_fields(request: Request, session: SessionDep, llm_provider: s
     models = []
     if llm_provider == "ollama":
         models = await OllamaClient(settings.ollama_api_url, "").list_models()
+    elif llm_provider == "codex-cli":
+        models = await CodexCLIClient("").list_models()
     return templates.TemplateResponse(
         request,
         "_settings_fields.html",

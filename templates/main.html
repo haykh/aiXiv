@@ -128,6 +128,10 @@
                                     <option value="ollama" {% if settings.llm_provider=="ollama" %}selected{% endif %}>
                                         Ollama
                                         (local)</option>
+                                    <option value="claude-cli" {% if settings.llm_provider=="claude-cli" %}selected{%
+                                        endif %}>Claude CLI (subscription)</option>
+                                    <option value="codex-cli" {% if settings.llm_provider=="codex-cli" %}selected{%
+                                        endif %}>Codex CLI (subscription)</option>
                                     <option value="claude" {% if settings.llm_provider=="claude" %}selected{% endif %}
                                         disabled>
                                         Claude

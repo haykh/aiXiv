@@ -12,6 +12,27 @@
     {% include "_settings_models.html" with context %}
 </div>
 
+{% elif provider == "claude-cli" %}
+<div class="setting">
+    <span class="setting-icon">{{ icon("cpu") }}</span>
+    <label class="setting-body">
+        <strong>Model</strong>
+        <span class="setting-desc">Alias or full model ID passed to the <code>claude</code> CLI — e.g.
+            <code>sonnet</code>, <code>haiku</code>, <code>opus</code>, or <code>claude-opus-4-8</code>. Leave empty for
+            the CLI's default.</span>
+        <input type="text" name="llm_model" value="{{ settings.llm_model }}" placeholder="e.g. sonnet, haiku, opus">
+    </label>
+</div>
+<p class="empty">
+    Generation runs through your local <code>claude</code> CLI — no API key, uses your Claude Code login.
+</p>
+
+{% elif provider == "codex-cli" %}
+{% set empty_msg = "— no codex model cache found; run codex once first —" %}
+{% include "_settings_models.html" with context %}
+<p class="empty">Generation runs through your local <code>codex exec</code> CLI — no API key, uses your ChatGPT login.
+    For testing.</p>
+
 {% elif provider == "claude" %}
 <div class="setting">
     <span class="setting-icon">{{ icon("key-round") }}</span>

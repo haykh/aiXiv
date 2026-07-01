@@ -1,7 +1,11 @@
+import logging
+
 import httpx
 
 from aiXiv.settings import Defaults
 from aiXiv.llm.base import LLMClient
+
+logger = logging.getLogger("aiXiv.llm")
 
 
 class OllamaClient(LLMClient):
@@ -16,6 +20,7 @@ class OllamaClient(LLMClient):
         schema=None,
         temperature: float = Defaults.LLM_TEMPERATURE,
     ) -> str:
+        logger.info("ollama ▶ requesting model=%s @ %s", self.model, self.base_url)
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
                 f"{self.base_url}/api/chat",
@@ -28,7 +33,9 @@ class OllamaClient(LLMClient):
                 },
             )
             resp.raise_for_status()
-            return resp.json()["message"]["content"]
+            data = resp.json()
+            logger.info("ollama ◀ answered by model=%s", data.get("model", "unknown"))
+            return data["message"]["content"]
 
     async def list_models(self) -> list[str]:
         async with httpx.AsyncClient(timeout=10) as client:
