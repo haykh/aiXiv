@@ -99,7 +99,9 @@ def library_context(
         .order_by(Bookmark.created_at.desc())
     ).all()
     bookmark_ids = {p.id for p in bookmarked}
-    scores = {s.paper_id: s for s, _ in ranked}  # AI score per paper, for cross-tab display
+    scores = {
+        s.paper_id: s for s, _ in ranked
+    }  # AI score per paper, for cross-tab display
     return {
         "profile": profile,
         "ranked": ranked,
