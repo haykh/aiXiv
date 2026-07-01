@@ -1,9 +1,8 @@
 <p align="center">
-  <img src="static/icon.svg" alt="aiXiv logo" width="96">
+  <img src="static/icons/icon.svg" alt="aiXiv logo" width="96">
 </p>
 
-<h1 align="center">aiXiv</h1>
-
+<h1 align="center">${\color{f27171}\textit{ai}}\text{Xiv}$</h1>
 <p align="center">A personalized arXiv digest driven by your own research profile.</p>
 
 ---
