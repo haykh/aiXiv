@@ -48,7 +48,7 @@ $ctype-colors: (
 @font-face {
     font-family: "IBM Plex Sans";
     src: url("/static/fonts/IBM_Plex_Sans/IBMPlexSans-VariableFont_wdth,wght.ttf") format("truetype");
-    font-weight: 100 700; // Plex's weight axis
+    font-weight: 100 700;
     font-style: normal;
     font-display: swap;
 }
@@ -236,7 +236,6 @@ button.small {
     font-family: var(--pico-font-family-monospace);
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--pico-primary);
 }
 
 .topbar .brand b {
@@ -251,12 +250,12 @@ button.small {
     margin-left: auto;
     width: auto;
     padding: 0.4rem 0.8rem;
-    line-height: 1.2rem; // match the settings/delete icon-button height
+    line-height: 1.2rem;
 }
 
 .settings-btn {
     width: auto;
-    margin-left: auto; // keep it pushed right when the new-profile button isn't present
+    margin-left: auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
