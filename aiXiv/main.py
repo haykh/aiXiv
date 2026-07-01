@@ -13,7 +13,7 @@ from fastapi.templating import Jinja2Templates
 from sqlmodel import select, Session
 
 from aiXiv import __version__
-from aiXiv.defaults import Defaults
+from aiXiv.settings import Defaults
 from aiXiv.database.db import initialize_db, SessionDep, get_settings, engine
 from aiXiv.database.tables import Profile, Score, Paper, Library, Vote, Bookmark
 from aiXiv.utils.latex2html import latex_to_html

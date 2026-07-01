@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from sqlmodel import SQLModel, Field, Column, JSON, UniqueConstraint
 
-from aiXiv.defaults import Defaults
+from aiXiv.settings import Defaults
 
 
 class Profile(SQLModel, table=True):

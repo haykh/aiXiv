@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from sqlmodel import select
 
-from aiXiv.defaults import Defaults
+from aiXiv.settings import Defaults, Prompts
 from aiXiv.database.db import get_settings, Session
 from aiXiv.database.tables import Profile, Score, Paper
 from aiXiv.llm import get_llm_client
@@ -24,8 +24,7 @@ async def rank_one_paper(
         messages=[
             {
                 "role": "system",
-                "content": "Score how relevant the paper is to the researcher's profile, 0-10, using their summary and keywords.\n"
-                + "Give a score and a one-line reason. Score on topical match, not general quality. Respond as JSON.",
+                "content": Prompts.PAPER_SCORE,
             },
             {
                 "role": "user",
@@ -59,7 +58,6 @@ async def rank_one_paper(
             reason=ranking_data.reason,
         )
         session.add(score)
-    # commit per paper so ranked papers land in the DB one at a time, not all at the end
     session.commit()
     return score
 

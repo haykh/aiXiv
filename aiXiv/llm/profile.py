@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from aiXiv.defaults import Defaults
+from aiXiv.settings import Defaults, Prompts
 from aiXiv.database.db import get_settings, Session
 from aiXiv.database.tables import Profile, Paper
 from aiXiv.llm import get_llm_client
@@ -19,11 +19,7 @@ async def analyze_text(text: str, session: Session) -> ProfileExtraction:
         messages=[
             {
                 "role": "system",
-                "content": "You build an academic interest profile from a researcher's own words (bio, abstracts, descriptions of past work).\n\n"
-                + "Extract:\n"
-                + "- summary: a dense paragraph describing their research topics, methods, and the kinds of problems they care about — written so it can be compared against paper abstracts to judge relevance.\n"
-                + '- keywords: specific topical phrases (subfields, methods, objects of study), not generic terms. Prefer "tidal disruption events" over "astrophysics"\n\n'
-                + "Base everything ONLY on the provided text; do not invent interests. Respond as JSON.",
+                "content": Prompts.PROFILE_EXTRACTION,
             },
             {
                 "role": "user",
@@ -76,13 +72,7 @@ async def refine_profile(
         messages=[
             {
                 "role": "system",
-                "content": "You refine an existing researcher interest profile using their feedback. "
-                "They rated papers 0-10 for how relevant each ACTUALLY is to them.\n"
-                "- Emphasize topics/methods from highly-rated papers.\n"
-                "- De-emphasize topics that appear only in low-rated papers.\n"
-                "- Stay grounded in the original profile and the rated papers; do not invent new interests.\n"
-                "Produce an updated summary (a dense paragraph, comparable against abstracts) "
-                "and keyword list. Respond as JSON.",
+                "content": Prompts.PROFILE_REFINEMENT,
             },
             {
                 "role": "user",

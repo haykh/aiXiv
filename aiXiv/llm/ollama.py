@@ -1,6 +1,6 @@
 import httpx
 
-from aiXiv.defaults import Defaults
+from aiXiv.settings import Defaults
 from aiXiv.llm.base import LLMClient
 
 

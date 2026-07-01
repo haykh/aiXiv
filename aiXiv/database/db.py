@@ -11,7 +11,7 @@ from sqlmodel import (
     create_engine,
 )
 
-from aiXiv.defaults import Defaults
+from aiXiv.settings import Defaults
 from aiXiv.database.tables import Setting
 
 
