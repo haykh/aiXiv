@@ -55,7 +55,7 @@
         <details class="profile-summary">
             <summary>show profile summary</summary>
             <h1>{{ profile.name }}</h1>
-            <p>{{ profile.summary_profile }}</p>
+            <p>{{ profile.summary }}</p>
             <p class="keywords">{% for k in profile.keywords %}<span>{{ k }}</span>{% endfor %}</p>
         </details>
 
@@ -127,10 +127,12 @@
                                     <option value="ollama" {% if settings.llm_provider=="ollama" %}selected{% endif %}>
                                         Ollama
                                         (local)</option>
-                                    <option value="claude" {% if settings.llm_provider=="claude" %}selected{% endif %}>
+                                    <option value="claude" {% if settings.llm_provider=="claude" %}selected{% endif %}
+                                        disabled>
                                         Claude
                                     </option>
-                                    <option value="openai" {% if settings.llm_provider=="openai" %}selected{% endif %}>
+                                    <option value="openai" {% if settings.llm_provider=="openai" %}selected{% endif %}
+                                        disabled>
                                         OpenAI
                                     </option>
                                 </select>
@@ -179,7 +181,7 @@
         <small>
             personalized arXiv triage for your research profile
         </small>
-        <a class="git-link" href="https://example.com/aixiv.git" target="_blank" rel="noopener noreferrer"
+        <a class="git-link" href="https://github.com/haykh/aixiv.git" target="_blank" rel="noopener noreferrer"
             aria-label="Git repository">
             {{ icon("git-branch") }}
             <span>git</span>
@@ -198,14 +200,10 @@
                 throwOnError: false,
             });
         }
-        const toggleAll = (btn) => {
-            const boxes = btn.closest("form").querySelectorAll('input[type="checkbox"]:not(:disabled)');
-            const allOn = [...boxes].every(b => b.checked);
-            boxes.forEach(b => b.checked = !allOn);
-        }
-        const toggleAssociated = (formId) => {
-            const boxes = document.querySelectorAll(`input[type="checkbox"][form="${formId}"]:not(:disabled)`);
-            const allOn = [...boxes].every(b => b.checked);
+        const toggleAll = (ref) => {
+            const form = typeof ref === "string" ? document.getElementById(ref) : ref.closest("form");
+            const boxes = [...form.elements].filter(el => el.type === "checkbox" && !el.disabled);
+            const allOn = boxes.every(b => b.checked);
             boxes.forEach(b => b.checked = !allOn);
         }
         const rateInput = (input) => {

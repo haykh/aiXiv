@@ -28,6 +28,7 @@ engine = create_engine(db_url, connect_args=connect_args)
 def initialize_db():
     SQLModel.metadata.create_all(engine)
     _ensure_setting_columns()
+    _rename_profile_columns()
 
 
 def _ensure_setting_columns():
@@ -37,6 +38,20 @@ def _ensure_setting_columns():
         for col in ("claude_api_key", "openai_api_key"):
             if col not in existing:
                 con.execute(f"ALTER TABLE setting ADD COLUMN {col} VARCHAR DEFAULT ''")
+        con.commit()
+    finally:
+        con.close()
+
+
+def _rename_profile_columns():
+    """Migrate the old raw_profile/summary_profile columns to their new names."""
+    renames = {"raw_profile": "raw_text", "summary_profile": "summary"}
+    con = sqlite3.connect(db_filename)
+    try:
+        existing = {row[1] for row in con.execute("PRAGMA table_info(profile)")}
+        for old, new in renames.items():
+            if old in existing and new not in existing:
+                con.execute(f"ALTER TABLE profile RENAME COLUMN {old} TO {new}")
         con.commit()
     finally:
         con.close()

@@ -39,10 +39,10 @@
                 <p class="cats">{{ p.categories | join(" · ") }}</p>
                 <p class="abstract">{{ p.abstract | latex }}</p>
                 <div class="card-actions">
-                    <button type="button" class="icon-btn danger secondary outline" hx-post="/library/remove"
-                        hx-target="#library" hx-disabled-elt="this" hx-confirm="Remove from library?"
-                        title="Remove from library" aria-label="Remove from library"
-                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ p.id }}", "active_tab": "unranked"}'>{{
+                    <button type="button" class="icon-btn danger secondary outline"
+                        hx-post="/library/remove-selected" hx-target="#library" hx-disabled-elt="this"
+                        hx-confirm="Remove from library?" title="Remove from library" aria-label="Remove from library"
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_ids": "{{ p.id }}", "active_tab": "unranked"}'>{{
                         icon("trash-2") }}</button>
                 </div>
             </article>
@@ -72,7 +72,7 @@
             <input type="hidden" name="active_tab" value="ranked">
             <div class="toolbar">
                 <button type="button" class="small secondary outline"
-                    onclick="toggleAssociated('ranked-remove-form')">select all</button>
+                    onclick="toggleAll('ranked-remove-form')">select all</button>
                 <button type="submit" class="small secondary outline">
                     <span class="when-idle">delete selected</span>
                     <span class="when-busy" aria-busy="true">deleting...</span>
@@ -118,10 +118,10 @@
                 <div class="card-actions">
                     <button type="button" class="small secondary outline" hx-post="/scores/delete" hx-target="#library"
                         hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}"}'>unrank</button>
-                    <button type="button" class="icon-btn danger secondary outline" hx-post="/library/remove"
-                        hx-target="#library" hx-confirm="Remove from library?" title="Remove from library"
-                        aria-label="Remove from library"
-                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}", "active_tab": "ranked"}'>{{
+                    <button type="button" class="icon-btn danger secondary outline"
+                        hx-post="/library/remove-selected" hx-target="#library" hx-confirm="Remove from library?"
+                        title="Remove from library" aria-label="Remove from library"
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_ids": "{{ paper.id }}", "active_tab": "ranked"}'>{{
                         icon("trash-2") }}</button>
                 </div>
             </div>

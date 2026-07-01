@@ -8,8 +8,8 @@ from aiXiv.defaults import Defaults
 class Profile(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(default="")
-    raw_profile: str = Field(default="")
-    summary_profile: str = Field(default="")
+    raw_text: str = Field(default="")  # the researcher's pasted text
+    summary: str = Field(default="")  # LLM-written interest summary
     keywords: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(
@@ -39,6 +39,8 @@ class Paper(SQLModel, table=True):
 
 
 class Score(SQLModel, table=True):
+    """The AI's relevance ranking of a paper for a profile (0-10)."""
+
     __table_args__ = (UniqueConstraint("profile_id", "paper_id"),)
     id: int | None = Field(default=None, primary_key=True)
     profile_id: int = Field(foreign_key="profile.id")
@@ -53,6 +55,8 @@ class Score(SQLModel, table=True):
 
 
 class Vote(SQLModel, table=True):
+    """The user's own relevance rating of a paper for a profile (0-10)."""
+
     __table_args__ = (UniqueConstraint("profile_id", "paper_id"),)
     id: int | None = Field(default=None, primary_key=True)
     profile_id: int = Field(foreign_key="profile.id")

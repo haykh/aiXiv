@@ -46,17 +46,11 @@ def save_profile(
     """Persist a profile from (possibly user-edited) fields — no LLM call."""
     profile = Profile(
         name=name,
-        raw_profile=raw_text,
-        summary_profile=summary,
+        raw_text=raw_text,
+        summary=summary,
         keywords=keywords,
     )
     session.add(profile)
     session.commit()
     session.refresh(profile)
     return profile
-
-
-async def build_profile_from_text(text: str, name: str, session: Session) -> Profile:
-    """Analyze + save in one shot (kept for scripts / convenience)."""
-    extraction = await analyze_text(text, session)
-    return save_profile(name, text, extraction.summary, extraction.keywords, session)

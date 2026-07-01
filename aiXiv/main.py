@@ -102,6 +102,47 @@ def library_context(
     }
 
 
+def library_response(
+    request: Request,
+    session: SessionDep,
+    profile_id: int,
+    active_tab: str = "unranked",
+    sort: str = "score",
+):
+    """Re-render the library partial — the response shape most routes share."""
+    profile = session.get(Profile, profile_id)
+    return templates.TemplateResponse(
+        request, "_library.html", library_context(session, profile, sort, active_tab)
+    )
+
+
+def purge_papers(session: SessionDep, profile_id: int, paper_ids: list[int]):
+    """Remove a profile's rows (library link, score, vote, bookmark) for given papers."""
+    if not paper_ids:
+        return
+    for model in (Library, Score, Vote, Bookmark):
+        for row in session.exec(
+            select(model).where(
+                model.profile_id == profile_id, model.paper_id.in_(paper_ids)
+            )
+        ).all():
+            session.delete(row)
+    session.commit()
+
+
+def purge_profile(session: SessionDep, profile_id: int):
+    """Delete all of a profile's dependent rows, then the profile itself."""
+    for model in (Score, Vote, Bookmark, Library):
+        for row in session.exec(
+            select(model).where(model.profile_id == profile_id)
+        ).all():
+            session.delete(row)
+    profile = session.get(Profile, profile_id)
+    if profile:
+        session.delete(profile)
+    session.commit()
+
+
 async def browse_context(
     session: SessionDep,
     profile: Profile,
@@ -280,11 +321,7 @@ async def rank_route(
     if paper_ids:
         papers = session.exec(select(Paper).where(Paper.id.in_(paper_ids))).all()
         await rank_papers(profile, papers, session)
-    return templates.TemplateResponse(
-        request,
-        "_library.html",
-        library_context(session, profile, active_tab="ranked"),
-    )
+    return library_response(request, session, profile_id, active_tab="ranked")
 
 
 @app.post("/scores/delete")
@@ -299,45 +336,8 @@ async def delete_score(
     ).first()
     if score:
         session.delete(score)
-    session.commit()
-    return templates.TemplateResponse(
-        request,
-        "_library.html",
-        library_context(
-            session,
-            session.get(Profile, profile_id),
-            active_tab="ranked",
-        ),
-    )
-
-
-@app.post("/library/remove")
-async def remove_from_library(
-    request: Request,
-    session: SessionDep,
-    profile_id: int = Form(...),
-    paper_id: int = Form(...),
-    active_tab: str = Form("unranked"),
-):
-    for model in (Library, Score, Vote, Bookmark):
-        row = session.exec(
-            select(model).where(
-                model.profile_id == profile_id, model.paper_id == paper_id
-            )
-        ).first()
-        if row:
-            session.delete(row)
-    session.commit()
-
-    return templates.TemplateResponse(
-        request,
-        "_library.html",
-        library_context(
-            session,
-            session.get(Profile, profile_id),
-            active_tab=active_tab,
-        ),
-    )
+        session.commit()
+    return library_response(request, session, profile_id, active_tab="ranked")
 
 
 @app.post("/library/remove-selected")
@@ -348,26 +348,9 @@ async def remove_selected_from_library(
     paper_ids: list[int] = Form([]),
     active_tab: str = Form("unranked"),
 ):
-    if paper_ids:
-        for model in (Library, Score, Vote, Bookmark):
-            for row in session.exec(
-                select(model).where(
-                    model.profile_id == profile_id,
-                    model.paper_id.in_(paper_ids),
-                )
-            ).all():
-                session.delete(row)
-        session.commit()
-
-    return templates.TemplateResponse(
-        request,
-        "_library.html",
-        library_context(
-            session,
-            session.get(Profile, profile_id),
-            active_tab=active_tab,
-        ),
-    )
+    """Remove one or many papers from the library (a single card sends one id)."""
+    purge_papers(session, profile_id, paper_ids)
+    return library_response(request, session, profile_id, active_tab=active_tab)
 
 
 @app.post("/profiles/delete")
@@ -375,15 +358,7 @@ async def delete_profile(
     session: SessionDep,
     profile_id: int = Form(...),
 ):
-    for model in (Score, Vote, Bookmark, Library):
-        for row in session.exec(
-            select(model).where(model.profile_id == profile_id)
-        ).all():
-            session.delete(row)
-    profile = session.get(Profile, profile_id)
-    if profile:
-        session.delete(profile)
-    session.commit()
+    purge_profile(session, profile_id)
     return RedirectResponse("/", status_code=303)
 
 
@@ -471,12 +446,4 @@ async def delete_vote(
     if existing:
         session.delete(existing)
         session.commit()
-    return templates.TemplateResponse(
-        request,
-        "_library.html",
-        library_context(
-            session,
-            session.get(Profile, profile_id),
-            active_tab=active_tab,
-        ),
-    )
+    return library_response(request, session, profile_id, active_tab=active_tab)

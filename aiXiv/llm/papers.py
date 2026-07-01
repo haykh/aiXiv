@@ -32,7 +32,7 @@ async def rank_papers(
                 {
                     "role": "user",
                     "content": "Researcher's profile:\n"
-                    + f"summary: {profile.summary_profile}\n"
+                    + f"summary: {profile.summary}\n"
                     + f"keywords: {', '.join(profile.keywords)}\n\n"
                     + "Paper:\n"
                     + f"title: {paper.title}\n"

@@ -2,49 +2,43 @@
 @use 'sass:color';
 
 $accent-color: #f27171;
-$arxiv-color: #f27171;
 $ranked-color: #89c545;
 $unranked-color: #407fec;
+$arxiv-color: $accent-color;
 
-$ctypes: accent, ranked, unranked, arxiv;
+$ctype-colors: (
+    ranked: $ranked-color,
+    unranked: $unranked-color,
+    arxiv: $arxiv-color,
+);
 
-@each $ctype in $ctypes {
-    $color: if(sass($ctype ==accent): $accent-color; else: if(sass($ctype ==ranked): $ranked-color; else: if(sass($ctype ==unranked): $unranked-color; else: $arxiv-color)));
-    $color-hover: color.adjust($color, $lightness: 5%);
-    $color-background: color.adjust($color, $lightness: -15%, $saturation: -5%);
-    $color-hover-background: color.adjust($color-background, $lightness: -10%);
-    $color-border: color.adjust($color-background, $lightness: 5%);
-    $color-hover-border: color.adjust($color-hover-background, $lightness: 5%);
-    $color-focus: color.adjust($color, $alpha: -0.75);
+@mixin primary-vars($color) {
+    $hover: color.adjust($color, $lightness: 5%);
+    $background: color.adjust($color, $lightness: -15%, $saturation: -5%);
+    $hover-background: color.adjust($background, $lightness: -10%);
+    $border: color.adjust($background, $lightness: 5%);
+    $hover-border: color.adjust($hover-background, $lightness: 5%);
+    $focus: color.adjust($color, $alpha: -0.75);
 
-    @if $ctype =="accent" {
-        [data-theme="dark"] {
-            --pico-primary: #{$color};
-            --pico-primary-hover: #{$color-hover};
-            --pico-primary-border: #{$color-border};
-            --pico-primary-underline: #{$color};
-            --pico-primary-background: #{$color-background};
-            --pico-primary-hover-background: #{$color-hover-background};
-            --pico-primary-hover-border: #{$color-hover-border};
-            --pico-primary-focus: #{$color-focus};
-            --pico-form-element-active-border-color: #{$color-border};
-            --pico-form-element-focus-color: #{$color-focus};
-        }
-    }
+    --pico-primary: #{$color};
+    --pico-primary-hover: #{$hover};
+    --pico-primary-border: #{$border};
+    --pico-primary-underline: #{$color};
+    --pico-primary-background: #{$background};
+    --pico-primary-hover-background: #{$hover-background};
+    --pico-primary-hover-border: #{$hover-border};
+    --pico-primary-focus: #{$focus};
+    --pico-form-element-active-border-color: #{$border};
+    --pico-form-element-focus-color: #{$focus};
+}
 
-    @else {
-        .#{$ctype} {
-            --pico-primary: #{$color};
-            --pico-primary-hover: #{$color-hover};
-            --pico-primary-border: #{$color-border};
-            --pico-primary-underline: #{$color};
-            --pico-primary-background: #{$color-background};
-            --pico-primary-hover-background: #{$color-hover-background};
-            --pico-primary-hover-border: #{$color-hover-border};
-            --pico-primary-focus: #{$color-focus};
-            --pico-form-element-active-border-color: #{$color-border};
-            --pico-form-element-focus-color: #{$color-focus};
-        }
+[data-theme="dark"] {
+    @include primary-vars($accent-color);
+}
+
+@each $name, $color in $ctype-colors {
+    .#{$name} {
+        @include primary-vars($color);
     }
 }
 
@@ -271,7 +265,7 @@ button.small {
 .keywords span {
     font-family: var(--pico-font-family-monospace);
     font-size: 0.72rem;
-    background: rgba(86, 211, 100, 0.08);
+    background: var(--pico-card-background-color);
     border: 1px solid var(--pico-card-border-color);
     border-radius: 999px;
     padding: 0.1rem 0.55rem;

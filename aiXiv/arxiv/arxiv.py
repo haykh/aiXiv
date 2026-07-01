@@ -34,6 +34,17 @@ def _parse_feed(text: str) -> tuple[list[Paper], int]:
     return papers, total
 
 
+async def _query(params: dict) -> tuple[list[Paper], int]:
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(
+            arxiv_api_url,
+            params=params,
+            headers={"User-Agent": f"aiXiv/{__version__}"},
+        )
+        resp.raise_for_status()
+        return _parse_feed(resp.text)
+
+
 async def fetch_from_arxiv(
     category: ArxivCategoryValue,
     page: int,
@@ -48,27 +59,13 @@ async def fetch_from_arxiv(
         "sortBy": "submittedDate",
         "sortOrder": "descending",
     }
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(
-            arxiv_api_url,
-            params=params,
-            headers={"User-Agent": f"aiXiv/{__version__}"},
-        )
-        resp.raise_for_status()
-        return _parse_feed(resp.text)
+    return await _query(params)
 
 
 async def fetch_from_arxiv_by_ids(arxiv_ids: list[str]) -> list[Paper]:
     params = {"id_list": ",".join(arxiv_ids), "max_results": len(arxiv_ids)}
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(
-            arxiv_api_url,
-            params=params,
-            headers={"User-Agent": f"aiXiv/{__version__}"},
-        )
-        resp.raise_for_status()
-        papers, _ = _parse_feed(resp.text)
-        return papers
+    papers, _ = await _query(params)
+    return papers
 
 
 def store_papers(papers: list[Paper], session: Session) -> int:
