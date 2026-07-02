@@ -15,17 +15,19 @@ aiXiv reads a description of your research interests, builds an interest profile
 - **Fetches abstracts from arXiv.** Browse any arXiv category (e.g. `astro-ph.HE`) over a chosen date range and import the results into a library.
 - **Ranks papers by relevance.** The model scores each imported paper against your profile (0–10) and gives a short reason for the score.
 - **Lets you vote.** Rate any ranked paper 0–10 with a slider. Once you have votes, a "refine from votes" action feeds them back to the model to update your profile.
-- **Bookmarks.** Save papers to a separate bookmarked list from either the ranked or unranked views.
-- **Multiple profiles.** Keep several profiles and switch between them; each has its own rankings, votes, and bookmarks.
+- **Bookmarks.** Save papers to a separate bookmarked list from any view.
+- **Seen tracking.** Mark papers as seen to move them out of the *new* and *ranked* lists into a separate *seen* view; seen papers are also skipped by "select all" when importing from arXiv, so they aren't re-imported by accident.
+- **Sorting and pagination.** Every list can be sorted (by relevance, publish date, ranking/bookmark date) in either direction, and long lists are paginated.
+- **Multiple profiles.** Keep several profiles and switch between them; each has its own rankings, votes, bookmarks, and seen marks.
 - **Math rendering.** Titles and abstracts render LaTeX via KaTeX.
 
 ## How it works
 
 1. **Create a profile** — click *+ new profile*, give it a name, and paste in text describing your interests. The model analyzes it and you save the resulting profile.
 2. **Browse arXiv** — on the *browse arXiv* tab, pick a category and date range (or use the last-day / week / month presets) and import papers into your library.
-3. **Rank** — in the *library* under *unranked*, select papers and click *rank selected*. Ranked papers move to the *ranked* tab with a relevance score and a one-line reason.
+3. **Rank** — in the *library* under *new*, select papers and click *rank selected*. Ranked papers move to the *ranked* tab with a relevance score and a one-line reason.
 4. **Vote and refine** — click a paper's vote score to open a slider and rate it. When you have votes, use *refine from votes* to update the profile from your feedback.
-5. **Bookmark** — use the bookmark control on any paper's card to save it to the *bookmarked* tab.
+5. **Bookmark and mark seen** — use the bookmark control (top right of a card) to save a paper to the *bookmarked* tab, and the eye control (top left) to move papers you've processed to the *seen* tab.
 
 ## Requirements
 

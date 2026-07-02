@@ -76,11 +76,12 @@
                         required autocomplete="off">
                     <input type="date" name="start" required aria-label="from">
                     <input type="date" name="end" required aria-label="to">
-                    <select name="per_page" aria-label="results per page">
-                        <option value="10">10</option>
-                        <option value="20" selected>20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
+                    <!-- re-browse on change so the list always shows as many papers as requested -->
+                    <select name="per_page" aria-label="results per page"
+                        onchange="if(this.form.checkValidity()) this.form.requestSubmit()">
+                        {% for n in (10, 20, 50, 100) %}
+                        <option value="{{ n }}" {{ "selected" if n==browse_page_size }}>{{ n }}</option>
+                        {% endfor %}
                     </select>
                     <button type="submit">
                         <span class="when-idle">Browse</span>
@@ -241,20 +242,22 @@
         };
         const refreshSelectStates = () => document.querySelectorAll("#library .select-all").forEach(setSelectState);
 
+        // data-skip marks boxes "select all" passes over on its first pass
+        // (bookmarked papers in the library, already-seen papers in browse)
         const toggleAll = (ref) => {
             const form = typeof ref === "string" ? document.getElementById(ref) : ref.closest("form");
             const boxes = [...form.elements].filter(el => el.type === "checkbox" && !el.disabled);
-            const book = boxes.filter(b => b.dataset.bookmarked);
-            const nonBook = boxes.filter(b => !b.dataset.bookmarked);
+            const skip = boxes.filter(b => b.dataset.skip);
+            const plain = boxes.filter(b => !b.dataset.skip);
             const allOn = boxes.length && boxes.every(b => b.checked);
-            const nonBookOnly = nonBook.length && nonBook.every(b => b.checked) && book.every(b => !b.checked);
+            const plainOnly = plain.length && plain.every(b => b.checked) && skip.every(b => !b.checked);
 
             if (allOn) {
-                boxes.forEach(b => b.checked = false);                       // all selected -> clear
-            } else if (nonBook.length && !nonBookOnly) {
-                boxes.forEach(b => b.checked = !b.dataset.bookmarked);       // -> only non-bookmarked
+                boxes.forEach(b => b.checked = false);                 // all selected -> clear
+            } else if (plain.length && !plainOnly) {
+                boxes.forEach(b => b.checked = !b.dataset.skip);       // -> only non-skipped
             } else {
-                boxes.forEach(b => b.checked = true);                        // -> everything (incl. bookmarks)
+                boxes.forEach(b => b.checked = true);                  // -> everything (incl. skipped)
             }
             refreshSelectStates();
         };
@@ -263,14 +266,22 @@
             if (e.target.matches?.('input[name="paper_ids"]')) refreshSelectStates();
         });
 
-        // preserve the current selection across a bookmark toggle (which re-renders #library)
+        // preserve the current selection across a bookmark/seen toggle (which re-renders #library)
         let selectionBeforeBookmark = null;
         document.body.addEventListener("htmx:beforeRequest", (e) => {
-            if (e.target.classList?.contains("bookmark-btn")) {
+            if (e.target.classList?.contains("bookmark-btn") || e.target.classList?.contains("seen-btn")) {
                 selectionBeforeBookmark = [...document.querySelectorAll('#library input[name="paper_ids"]:checked')]
                     .map(b => b.value);
             }
         });
+
+        // sort-order button: flip the hidden asc/desc input and re-submit the sort form
+        const flipOrder = (btn) => {
+            const form = btn.closest("form");
+            const inp = form.querySelector('input[name="order"]');
+            inp.value = inp.value === "asc" ? "desc" : "asc";
+            form.requestSubmit();
+        };
 
         const rateInput = (input) => {
             const pop = input.closest(".vote-pop");

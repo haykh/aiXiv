@@ -3,15 +3,17 @@
 
 $accent-color: #f27171;
 $ranked-color: #89c545;
-$unranked-color: #407fec;
+$new-color: #407fec;
 $bookmark-color: #e0a458;
+$seen-color: #a678de;
 $arxiv-color: $accent-color;
 
 $ctype-colors: (
     ranked: $ranked-color,
-    unranked: $unranked-color,
+    new: $new-color,
     arxiv: $arxiv-color,
     bookmarked: $bookmark-color,
+    seen: $seen-color,
 );
 
 @mixin primary-vars($color) {
@@ -415,7 +417,7 @@ button.small {
     padding: 0.2rem 0.7rem;
 }
 
-/* ───────────────────────── inner tabs (unranked | ranked) ───────────────────────── */
+/* ───────────────────────── inner tabs (new | ranked | bookmarked | seen) ───────────────────────── */
 .tabs>input[type="radio"] {
     display: none;
 }
@@ -445,9 +447,9 @@ button.small {
     display: none;
 }
 
-#tab-unranked:checked~.tab-bar label[for="tab-unranked"] {
-    color: #{$unranked-color};
-    border-bottom-color: #{$unranked-color};
+#tab-new:checked~.tab-bar label[for="tab-new"] {
+    color: #{$new-color};
+    border-bottom-color: #{$new-color};
 }
 
 #tab-ranked:checked~.tab-bar label[for="tab-ranked"] {
@@ -460,12 +462,15 @@ button.small {
     border-bottom-color: #{$bookmark-color};
 }
 
-#tab-bookmarked:checked~.tab-panel.bookmarked {
-    display: block;
+#tab-seen:checked~.tab-bar label[for="tab-seen"] {
+    color: #{$seen-color};
+    border-bottom-color: #{$seen-color};
 }
 
-#tab-unranked:checked~.tab-panel.unranked,
-#tab-ranked:checked~.tab-panel.ranked {
+#tab-new:checked~.tab-panel.new,
+#tab-ranked:checked~.tab-panel.ranked,
+#tab-bookmarked:checked~.tab-panel.bookmarked,
+#tab-seen:checked~.tab-panel.seen {
     display: block;
 }
 
@@ -520,6 +525,11 @@ article.imported {
     white-space: nowrap;
 }
 
+.badge.muted {
+    color: var(--pico-muted-color);
+    border-color: var(--pico-muted-color);
+}
+
 .authors {
     font-family: var(--pico-font-family-monospace);
     font-size: 0.76rem;
@@ -536,6 +546,12 @@ article.imported {
     margin: 0 0 0.45rem;
 }
 
+.cats .pubdate {
+    color: var(--pico-muted-color);
+    font-weight: 500;
+    margin-left: 0.7rem;
+}
+
 .abstract {
     font-size: 0.88rem;
     line-height: 1.55;
@@ -545,11 +561,10 @@ article.imported {
     margin: 0;
 }
 
-/* bookmark */
-.bookmark-btn {
+/* bookmark (top-right) and seen (left, vertically centered) toggles */
+.bookmark-btn,
+.seen-btn {
     position: absolute;
-    top: -0.65rem;
-    right: 0.7rem;
     width: auto;
     margin: 0;
     padding: 0.15rem;
@@ -560,18 +575,52 @@ article.imported {
     cursor: pointer;
 }
 
-.bookmark-btn:hover {
+.bookmark-btn {
+    top: -0.65rem;
+    right: 0.7rem;
+}
+
+/* centered in the same 3rem gutter the ranked score column uses */
+.seen-btn {
+    top: 50%;
+    left: 1rem;
+    transform: translateY(-50%);
+    width: 3rem;
+    display: inline-flex;
+    justify-content: center;
+}
+
+/* cards without a score column reserve the same left gutter as ranked ones */
+article.new,
+article.bookmarked:not(.scored),
+article.seen:not(.scored) {
+    padding-left: 5rem; // 1rem padding + 3rem gutter + 1rem gap
+}
+
+.bookmark-btn:hover,
+.seen-btn:hover {
     opacity: 0.85;
 }
 
-.bookmark-btn svg {
+.bookmark-btn svg,
+.seen-btn svg {
     width: 1.5rem;
     height: 1.5rem;
     stroke-dasharray: 3 2;
 }
 
-.bookmark-btn.on {
+.seen-btn svg {
+    width: 1.35rem;
+    height: 1.35rem;
+}
+
+.bookmark-btn.on,
+.seen-btn.on {
     opacity: 1;
+    color: #{$seen-color};
+}
+
+.bookmark-btn.on {
     color: var(--pico-primary);
 }
 
@@ -580,9 +629,14 @@ article.imported {
     stroke-dasharray: none;
 }
 
+.seen-btn.on svg {
+    stroke-dasharray: none;
+}
+
 
 article.ranked,
-article.bookmarked.scored {
+article.bookmarked.scored,
+article.seen.scored {
     display: grid;
     grid-template-columns: 3rem 1fr;
     gap: 1rem;
@@ -590,7 +644,8 @@ article.bookmarked.scored {
 }
 
 article.ranked .score,
-article.bookmarked.scored .score {
+article.bookmarked.scored .score,
+article.seen.scored .score {
     font-size: 1.7rem;
     font-weight: 700;
     line-height: 1;
@@ -599,7 +654,8 @@ article.bookmarked.scored .score {
     padding-top: 0.15rem;
 }
 
-article.bookmarked.scored .score.vote-static {
+article.bookmarked.scored .score.vote-static,
+article.seen.scored .score.vote-static {
     font-size: 1.1rem;
     color: var(--pico-muted-color);
     padding: 0.05rem 0.45rem;
@@ -626,6 +682,20 @@ article.bookmarked.scored .score.vote-static {
     gap: 0.5rem;
     margin-bottom: 0.75rem;
     font-size: 0.85rem;
+}
+
+.sort-form label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* stretch to the select's height so the icon sits dead-center next to it */
+.sort-form .order-btn {
+    align-self: stretch;
+    padding: 0 0.5rem;
 }
 
 /* ───────────────────────── misc ───────────────────────── */
@@ -877,14 +947,30 @@ article.bookmarked.scored .score.vote-static {
 @media (max-width: 480px) {
 
     article.ranked,
-    article.bookmarked.scored {
+    article.bookmarked.scored,
+    article.seen.scored {
         grid-template-columns: 1fr;
         gap: 0.25rem;
     }
 
     article.ranked .score,
-    article.bookmarked.scored .score {
+    article.bookmarked.scored .score,
+    article.seen.scored .score {
         text-align: left;
+    }
+
+    /* no left gutter on mobile — the seen toggle floats top-left again */
+    article.new,
+    article.bookmarked:not(.scored),
+    article.seen:not(.scored) {
+        padding-left: 1rem;
+    }
+
+    .seen-btn {
+        top: -0.65rem;
+        left: 0.7rem;
+        transform: none;
+        width: auto;
     }
 }
 

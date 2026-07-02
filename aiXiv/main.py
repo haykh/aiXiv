@@ -15,12 +15,13 @@ from fastapi import FastAPI, Request, Form, Response, Query
 from fastapi.responses import RedirectResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import nullslast
 from sqlmodel import select, Session
 
 from aiXiv import __version__
 from aiXiv.settings import Defaults
 from aiXiv.database.db import initialize_db, SessionDep, get_settings, get_engine
-from aiXiv.database.tables import Profile, Score, Paper, Library, Vote, Bookmark
+from aiXiv.database.tables import Profile, Score, Paper, Library, Vote, Bookmark, Seen
 from aiXiv.utils.latex2html import latex_to_html
 from aiXiv.utils.timeago import timeago
 from aiXiv.llm import get_llm_client
@@ -81,54 +82,129 @@ def icon(name: str) -> Markup:
 templates.env.globals["icon"] = icon
 
 
+# sortable columns per library tab; the first entry is that tab's default
+LIBRARY_SORTS = {
+    "new": {"published": Paper.published_at, "imported": Library.created_at},
+    "ranked": {
+        "score": Score.score,
+        "date": Score.updated_at,
+        "published": Paper.published_at,
+    },
+    "bookmarked": {
+        "added": Bookmark.created_at,
+        "published": Paper.published_at,
+        "score": Score.score,
+    },
+    "seen": {
+        "seen": Seen.created_at,
+        "published": Paper.published_at,
+        "score": Score.score,
+    },
+}
+
+
 def library_context(
     session: SessionDep,
     profile: Profile,
-    sort: str = "score",
-    active_tab: str = "unranked",
+    active_tab: str = "new",
+    sort: str = "",
+    order: str = "",
+    page: int = 1,
 ):
-    order = Score.score.desc() if sort == "score" else Score.updated_at.desc()
+    per_page = Defaults.LIBRARY_PAGE_SIZE
+    pid = profile.id
     votes = {
         v.paper_id: v.score
-        for v in session.exec(select(Vote).where(Vote.profile_id == profile.id)).all()
+        for v in session.exec(select(Vote).where(Vote.profile_id == pid)).all()
     }
+    # AI score per paper, for cross-tab display (bookmarked/seen show it too)
+    scores = {
+        s.paper_id: s
+        for s in session.exec(select(Score).where(Score.profile_id == pid)).all()
+    }
+    bookmark_ids = set(
+        session.exec(select(Bookmark.paper_id).where(Bookmark.profile_id == pid)).all()
+    )
+    seen_ids = set(
+        session.exec(select(Seen.paper_id).where(Seen.profile_id == pid)).all()
+    )
+
+    def tab_order(tab: str) -> tuple[str, str, int]:
+        """Resolve (sort, order, page) — request values for the active tab, defaults otherwise."""
+        if tab == active_tab:
+            return (
+                sort if sort in LIBRARY_SORTS[tab] else next(iter(LIBRARY_SORTS[tab])),
+                order if order in ("asc", "desc") else "desc",
+                max(1, page),
+            )
+        return next(iter(LIBRARY_SORTS[tab])), "desc", 1
+
+    def tab_state(tab: str, rows: list) -> dict:
+        """Slice one tab's full row list down to its current page."""
+        tab_sort, tab_dir, tab_page = tab_order(tab)
+        pages = max(1, math.ceil(len(rows) / per_page))
+        tab_page = min(tab_page, pages)
+        return {
+            "rows": rows[(tab_page - 1) * per_page : tab_page * per_page],
+            "total": len(rows),
+            "page": tab_page,
+            "pages": pages,
+            "sort": tab_sort,
+            "order": tab_dir,
+        }
+
+    def order_clause(tab: str):
+        tab_sort, tab_dir, _ = tab_order(tab)
+        col = LIBRARY_SORTS[tab][tab_sort]
+        return nullslast(col.asc() if tab_dir == "asc" else col.desc())
+
+    not_scored = Score.id == None  # noqa: E711
+    not_seen = Seen.id == None  # noqa: E711
+    new = session.exec(
+        select(Paper)
+        .join(Library, Library.paper_id == Paper.id)
+        .outerjoin(Score, (Score.paper_id == Paper.id) & (Score.profile_id == pid))
+        .outerjoin(Seen, (Seen.paper_id == Paper.id) & (Seen.profile_id == pid))
+        .where(Library.profile_id == pid, not_scored, not_seen)
+        .order_by(order_clause("new"))
+    ).all()
     ranked = session.exec(
         select(Score, Paper)
         .join(Paper)
-        .where(Score.profile_id == profile.id)
-        .order_by(order)
-    ).all()
-    unranked = session.exec(
-        select(Paper)
-        .join(Library, Library.paper_id == Paper.id)
-        .outerjoin(
-            Score,
-            (Score.paper_id == Paper.id) & (Score.profile_id == profile.id),
-        )
-        .where(Library.profile_id == profile.id, Score.id == None)  # noqa: E711
-        .order_by(Paper.published_at.desc())
+        .outerjoin(Seen, (Seen.paper_id == Paper.id) & (Seen.profile_id == pid))
+        .where(Score.profile_id == pid, not_seen)
+        .order_by(order_clause("ranked"))
     ).all()
     bookmarked = session.exec(
         select(Paper)
         .join(Bookmark, Bookmark.paper_id == Paper.id)
-        .where(Bookmark.profile_id == profile.id)
-        .order_by(Bookmark.created_at.desc())
+        .outerjoin(Score, (Score.paper_id == Paper.id) & (Score.profile_id == pid))
+        .where(Bookmark.profile_id == pid)
+        .order_by(order_clause("bookmarked"))
     ).all()
-    bookmark_ids = {p.id for p in bookmarked}
-    scores = {
-        s.paper_id: s for s, _ in ranked
-    }  # AI score per paper, for cross-tab display
+    seen = session.exec(
+        select(Paper)
+        .join(Seen, Seen.paper_id == Paper.id)
+        .join(Library, (Library.paper_id == Paper.id) & (Library.profile_id == pid))
+        .outerjoin(Score, (Score.paper_id == Paper.id) & (Score.profile_id == pid))
+        .where(Seen.profile_id == pid)
+        .order_by(order_clause("seen"))
+    ).all()
+
     return {
         "profile": profile,
-        "ranked": ranked,
-        "unranked": unranked,
         "votes": votes,
         "vote_count": len(votes),
         "scores": scores,
-        "sort": sort,
         "active_tab": active_tab,
-        "bookmarked": bookmarked,
         "bookmark_ids": bookmark_ids,
+        "seen_ids": seen_ids,
+        "tabs": {
+            "new": tab_state("new", new),
+            "ranked": tab_state("ranked", ranked),
+            "bookmarked": tab_state("bookmarked", bookmarked),
+            "seen": tab_state("seen", seen),
+        },
     }
 
 
@@ -136,20 +212,26 @@ def library_response(
     request: Request,
     session: SessionDep,
     profile_id: int,
-    active_tab: str = "unranked",
-    sort: str = "score",
+    active_tab: str = "new",
+    sort: str = "",
+    order: str = "",
+    page: int = 1,
 ):
     """Re-render the library partial — the response shape most routes share."""
     profile = session.get(Profile, profile_id)
     return templates.TemplateResponse(
         request,
         "_library_oob.html",
-        library_context(session, profile, sort, active_tab),
+        library_context(session, profile, active_tab, sort, order, page),
     )
 
 
 def purge_papers(session: SessionDep, profile_id: int, paper_ids: list[int]):
-    """Remove a profile's rows (library link, score, vote, bookmark) for given papers."""
+    """Remove a profile's rows (library link, score, vote, bookmark) for given papers.
+
+    Seen rows are kept on purpose: they stop browse from re-selecting the paper
+    for import even after it leaves the library.
+    """
     if not paper_ids:
         return
     for model in (Library, Score, Vote, Bookmark):
@@ -164,7 +246,7 @@ def purge_papers(session: SessionDep, profile_id: int, paper_ids: list[int]):
 
 def purge_profile(session: SessionDep, profile_id: int):
     """Delete all of a profile's dependent rows, then the profile itself."""
-    for model in (Score, Vote, Bookmark, Library):
+    for model in (Score, Vote, Bookmark, Seen, Library):
         for row in session.exec(
             select(model).where(model.profile_id == profile_id)
         ).all():
@@ -202,10 +284,22 @@ async def browse_context(
             )
         ).all()
     )
+    # seen papers stay selectable but are skipped by "select all"
+    seen = set(
+        session.exec(
+            select(Paper.arxiv_id)
+            .join(Seen, Seen.paper_id == Paper.id)
+            .where(
+                Seen.profile_id == profile.id,
+                Paper.arxiv_id.in_(ids),
+            )
+        ).all()
+    )
     total_pages = max(1, math.ceil(total / per_page))
     return {
         "papers": papers,
         "imported": imported,
+        "seen": seen,
         "profile": profile,
         "category": category,
         "start": start,
@@ -230,6 +324,7 @@ async def index(request: Request, session: SessionDep, profile_id: int | None = 
         "profile": profile,
         "categories": [c.value for c in ArxivCategory],
         "settings": get_settings(session),
+        "browse_page_size": Defaults.BROWSE_PAGE_SIZE,
     }
     if profile is not None:
         ctx |= library_context(session, profile)
@@ -371,14 +466,16 @@ async def library(
     request: Request,
     session: SessionDep,
     profile_id: int,
-    sort: str = "score",
-    active_tab: str = "unranked",
+    active_tab: str = "new",
+    sort: str = "",
+    order: str = "",
+    page: int = 1,
 ):
     profile = session.get(Profile, profile_id)
     return templates.TemplateResponse(
         request,
         "_library.html",
-        library_context(session, profile, sort, active_tab),
+        library_context(session, profile, active_tab, sort, order, page),
     )
 
 
@@ -443,6 +540,9 @@ async def delete_score(
     session: SessionDep,
     profile_id: int = Form(...),
     paper_id: int = Form(...),
+    sort: str = Form(""),
+    order: str = Form(""),
+    page: int = Form(1),
 ):
     score = session.exec(
         select(Score).where(Score.profile_id == profile_id, Score.paper_id == paper_id)
@@ -450,7 +550,7 @@ async def delete_score(
     if score:
         session.delete(score)
         session.commit()
-    return library_response(request, session, profile_id, active_tab="ranked")
+    return library_response(request, session, profile_id, "ranked", sort, order, page)
 
 
 @app.post("/scores/delete-selected")
@@ -459,6 +559,9 @@ async def delete_selected_scores(
     session: SessionDep,
     profile_id: int = Form(...),
     paper_ids: list[int] = Form([]),
+    sort: str = Form(""),
+    order: str = Form(""),
+    page: int = Form(1),
 ):
     """Unrank selected papers (drop their Score rows; the papers stay in the library)."""
     if paper_ids:
@@ -471,7 +574,7 @@ async def delete_selected_scores(
         for score in scores:
             session.delete(score)
         session.commit()
-    return library_response(request, session, profile_id, active_tab="ranked")
+    return library_response(request, session, profile_id, "ranked", sort, order, page)
 
 
 @app.post("/library/remove-selected")
@@ -480,11 +583,14 @@ async def remove_selected_from_library(
     session: SessionDep,
     profile_id: int = Form(...),
     paper_ids: list[int] = Form([]),
-    active_tab: str = Form("unranked"),
+    active_tab: str = Form("new"),
+    sort: str = Form(""),
+    order: str = Form(""),
+    page: int = Form(1),
 ):
     """Remove one or many papers from the library (a single card sends one id)."""
     purge_papers(session, profile_id, paper_ids)
-    return library_response(request, session, profile_id, active_tab=active_tab)
+    return library_response(request, session, profile_id, active_tab, sort, order, page)
 
 
 @app.post("/profiles/delete")
@@ -582,6 +688,9 @@ async def delete_vote(
     profile_id: int = Form(...),
     paper_id: int = Form(...),
     active_tab: str = Form("ranked"),
+    sort: str = Form(""),
+    order: str = Form(""),
+    page: int = Form(1),
 ):
     existing = session.exec(
         select(Vote).where(Vote.profile_id == profile_id, Vote.paper_id == paper_id)
@@ -589,7 +698,7 @@ async def delete_vote(
     if existing:
         session.delete(existing)
         session.commit()
-    return library_response(request, session, profile_id, active_tab=active_tab)
+    return library_response(request, session, profile_id, active_tab, sort, order, page)
 
 
 @app.post("/profiles/refine")
@@ -630,7 +739,10 @@ async def toggle_bookmark(
     session: SessionDep,
     profile_id: int = Form(...),
     paper_id: int = Form(...),
-    active_tab: str = Form("unranked"),
+    active_tab: str = Form("new"),
+    sort: str = Form(""),
+    order: str = Form(""),
+    page: int = Form(1),
 ):
     existing = session.exec(
         select(Bookmark).where(
@@ -642,12 +754,29 @@ async def toggle_bookmark(
     else:
         session.add(Bookmark(profile_id=profile_id, paper_id=paper_id))
     session.commit()
-    return library_response(
-        request,
-        session,
-        profile_id,
-        active_tab=active_tab,
-    )
+    return library_response(request, session, profile_id, active_tab, sort, order, page)
+
+
+@app.post("/seen/toggle")
+async def toggle_seen(
+    request: Request,
+    session: SessionDep,
+    profile_id: int = Form(...),
+    paper_id: int = Form(...),
+    active_tab: str = Form("new"),
+    sort: str = Form(""),
+    order: str = Form(""),
+    page: int = Form(1),
+):
+    existing = session.exec(
+        select(Seen).where(Seen.profile_id == profile_id, Seen.paper_id == paper_id)
+    ).first()
+    if existing:
+        session.delete(existing)
+    else:
+        session.add(Seen(profile_id=profile_id, paper_id=paper_id))
+    session.commit()
+    return library_response(request, session, profile_id, active_tab, sort, order, page)
 
 
 # ───────────────────────── Typer CLI app ─────────────────────────

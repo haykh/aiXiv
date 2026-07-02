@@ -21,14 +21,18 @@
 
     {% for p in papers %}
     {% set done = p.arxiv_id in imported %}
+    {% set was_seen = p.arxiv_id in seen %}
     <article class="{{ 'imported' if done }}">
         <label class="pick">
-            <input type="checkbox" name="arxiv_ids" value="{{ p.arxiv_id }}" {{ "disabled" if done }}>
+            <input type="checkbox" name="arxiv_ids" value="{{ p.arxiv_id }}" {{ "disabled" if done }} {% if was_seen
+                %}data-skip="1" {% endif %}>
             <a href="{{ p.url }}" target="_blank">{{ p.title | latex }}</a>
             {% if done %}<span class="badge">✓ imported</span>{% endif %}
+            {% if was_seen %}<span class="badge muted">seen</span>{% endif %}
         </label>
         <p class="authors">{{ p.authors[:6] | join(", ") }}{% if p.authors|length > 6 %}, et al.{% endif %}</p>
-        <p class="cats">{{ p.categories | join(" · ") }}</p>
+        <p class="cats">{{ p.categories | join(" · ") }}<span class="pubdate">{{ p.published_at.strftime("%d %b %Y")
+                }}</span></p>
         <p class="abstract">{{ p.abstract | latex }}</p>
     </article>
     {% endfor %}

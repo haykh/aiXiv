@@ -1,0 +1,6 @@
+<button type="button" class="seen-btn {{ 'on' if paper.id in seen_ids }}" hx-post="/seen/toggle" hx-target="#library"
+    hx-disabled-elt="this" aria-label="Toggle seen"
+    title="{{ 'Mark as unseen' if paper.id in seen_ids else 'Mark as seen' }}"
+    hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}", "active_tab": "{{ tab }}", "sort": "{{ t.sort }}", "order": "{{ t.order }}", "page": "{{ t.page }}"}'>
+    {{ icon("eye") }}
+</button>

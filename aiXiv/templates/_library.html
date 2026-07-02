@@ -1,22 +1,76 @@
+{% macro sort_form(tab, t, options) %}
+<form class="sort-form" hx-get="/library" hx-target="#library" hx-swap="innerHTML">
+    <input type="hidden" name="profile_id" value="{{ profile.id }}">
+    <input type="hidden" name="active_tab" value="{{ tab }}">
+    <input type="hidden" name="order" value="{{ t.order }}">
+    <label>sort by
+        <select name="sort" onchange="this.form.requestSubmit()">
+            {% for value, label in options %}
+            <option value="{{ value }}" {{ "selected" if t.sort==value }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <button type="button" class="icon-btn secondary outline order-btn" onclick="flipOrder(this)"
+        title="{{ 'ascending — click to reverse' if t.order == 'asc' else 'descending — click to reverse' }}"
+        aria-label="Reverse sort order">
+        {% if t.order == "asc" %}
+        {{ icon("arrow-up-narrow-wide") }}
+        {% else %}
+        {{ icon("arrow-down-wide-narrow") }}
+        {% endif %}
+    </button>
+</form>
+{% endmacro %}
+
+{% macro pager(tab, t) %}
+{% if t.pages > 1 %}
+<nav class="pager">
+    {% if t.page > 1 %}
+    <button type="button"
+        hx-get="/library?profile_id={{ profile.id }}&active_tab={{ tab }}&sort={{ t.sort }}&order={{ t.order }}&page={{ t.page - 1 }}"
+        hx-disabled-elt="this" hx-target="#library" hx-swap="innerHTML">&#12296; prev</button>
+    {% endif %}
+    <span>page {{ t.page }} / {{ t.pages }}</span>
+    {% if t.page < t.pages %} <button type="button"
+        hx-get="/library?profile_id={{ profile.id }}&active_tab={{ tab }}&sort={{ t.sort }}&order={{ t.order }}&page={{ t.page + 1 }}"
+        hx-disabled-elt="this" hx-target="#library" hx-swap="innerHTML">next &#12297;</button>
+        {% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
+
+{# hidden inputs so form actions come back to the same tab / sort / page #}
+{% macro state_inputs(tab, t) %}
+<input type="hidden" name="profile_id" value="{{ profile.id }}">
+<input type="hidden" name="active_tab" value="{{ tab }}">
+<input type="hidden" name="sort" value="{{ t.sort }}">
+<input type="hidden" name="order" value="{{ t.order }}">
+<input type="hidden" name="page" value="{{ t.page }}">
+{% endmacro %}
+
 <div class="tabs">
-    <input type="radio" name="libtab" id="tab-unranked" {% if active_tab !="ranked" %}checked{% endif %}>
+    <input type="radio" name="libtab" id="tab-new" {% if active_tab not in ("ranked", "bookmarked" , "seen" )
+        %}checked{% endif %}>
     <input type="radio" name="libtab" id="tab-ranked" {% if active_tab=="ranked" %}checked{% endif %}>
     <input type="radio" name="libtab" id="tab-bookmarked" {% if active_tab=="bookmarked" %}checked{% endif %}>
+    <input type="radio" name="libtab" id="tab-seen" {% if active_tab=="seen" %}checked{% endif %}>
 
     <div class="tab-bar">
-        <label for="tab-unranked">unranked · {{ unranked|length }}</label>
-        <label for="tab-ranked">ranked · {{ ranked|length }}</label>
-        <label for="tab-bookmarked">bookmarked · {{ bookmarked|length }}</label>
+        <label for="tab-new">new · {{ tabs["new"].total }}</label>
+        <label for="tab-ranked">ranked · {{ tabs["ranked"].total }}</label>
+        <label for="tab-bookmarked">bookmarked · {{ tabs["bookmarked"].total }}</label>
+        <label for="tab-seen">seen · {{ tabs["seen"].total }}</label>
     </div>
 
-    {# ───────────── unranked ───────────── #}
-    <div class="tab-panel unranked">
-        {% if not unranked %}
-        <p class="empty">No unranked papers — switch to the <strong>browse arXiv</strong> tab to import some.</p>
+    {# ───────────── new ───────────── #}
+    <div class="tab-panel new">
+        {% set t = tabs["new"] %}
+        {% if not t.total %}
+        <p class="empty">No new papers — switch to the <strong>browse arXiv</strong> tab to import some.</p>
         {% else %}
+        {{ sort_form("new", t, [("published", "publish date"), ("imported", "import date")]) }}
         <form>
-            <input type="hidden" name="profile_id" value="{{ profile.id }}">
-            <input type="hidden" name="active_tab" value="unranked">
+            {{ state_inputs("new", t) }}
             <div class="toolbar">
                 <button type="button" class="icon-btn secondary outline select-all" data-state="none"
                     onclick="toggleAll(this)" title="Select papers" aria-label="Select all">
@@ -32,49 +86,45 @@
                     <span class="when-busy" aria-busy="true">deleting...</span>
                 </button>
             </div>
-            {% for p in unranked %}
-            <article class="unranked">
-                {% with paper = p, tab = "unranked" %}{% include "_bookmark_btn.html" %}{% endwith %}
+            {% for p in t.rows %}
+            <article class="new">
+                {% with paper = p, tab = "new" %}
+                {% include "_seen_btn.html" %}
+                {% include "_bookmark_btn.html" %}
+                {% endwith %}
                 <label class="pick">
                     <input type="checkbox" name="paper_ids" value="{{ p.id }}" {% if p.id in bookmark_ids
-                        %}data-bookmarked="1" {% endif %}>
+                        %}data-skip="1" {% endif %}>
                     <a class="title" href="{{ p.url }}" target="_blank">{{ p.title | latex }}</a>
                 </label>
                 <p class="authors">{{ p.authors[:6] | join(", ") }}{% if p.authors|length > 6 %}, et al.{% endif %}</p>
-                <p class="cats">{{ p.categories | join(" · ") }}</p>
+                <p class="cats">{{ p.categories | join(" · ") }}<span class="pubdate">{{
+                        p.published_at.strftime("%d %b %Y") }}</span></p>
                 <p class="abstract">{{ p.abstract | latex }}</p>
                 <div class="card-actions">
                     <button type="button" class="icon-btn danger secondary outline" hx-post="/library/remove-selected"
                         hx-target="#library" hx-disabled-elt="this" hx-confirm="Remove from library?"
                         title="Remove from library" aria-label="Remove from library"
-                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_ids": "{{ p.id }}", "active_tab": "unranked"}'>{{
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_ids": "{{ p.id }}", "active_tab": "new", "sort": "{{ t.sort }}", "order": "{{ t.order }}", "page": "{{ t.page }}"}'>{{
                         icon("trash-2") }}</button>
                 </div>
             </article>
             {% endfor %}
         </form>
+        {{ pager("new", t) }}
         {% endif %}
     </div>
 
     {# ───────────── ranked ───────────── #}
     <div class="tab-panel ranked">
-        {% if not ranked %}
-        <p class="empty">No ranked papers yet. Pick unranked papers and click "rank selected".</p>
+        {% set t = tabs["ranked"] %}
+        {% if not t.total %}
+        <p class="empty">No ranked papers yet. Pick new papers and click "rank selected".</p>
         {% else %}
-        <form class="sort-form" hx-get="/library" hx-target="#library" hx-swap="innerHTML">
-            <input type="hidden" name="profile_id" value="{{ profile.id }}">
-            <input type="hidden" name="active_tab" value="ranked">
-            <label>sort by
-                <select name="sort" onchange="this.form.requestSubmit()">
-                    <option value="score" {{ "selected" if sort=="score" }}>relevance</option>
-                    <option value="date" {{ "selected" if sort=="date" }}>ranking date</option>
-                </select>
-            </label>
-        </form>
+        {{ sort_form("ranked", t, [("score", "relevance"), ("date", "ranking date"), ("published", "publish date")]) }}
         <form id="ranked-remove-form" hx-post="/library/remove-selected" hx-target="#library" hx-swap="innerHTML"
             hx-disabled-elt="find button[type='submit']" hx-confirm="Remove selected papers from library?">
-            <input type="hidden" name="profile_id" value="{{ profile.id }}">
-            <input type="hidden" name="active_tab" value="ranked">
+            {{ state_inputs("ranked", t) }}
             <div class="toolbar">
                 <button type="button" class="icon-btn secondary outline select-all" data-state="none"
                     onclick="toggleAll('ranked-remove-form')" title="Select papers" aria-label="Select all">
@@ -94,9 +144,12 @@
                 </button>
             </div>
         </form>
-        {% for score, paper in ranked %}
+        {% for score, paper in t.rows %}
         <article class="ranked">
-            {% with tab = "ranked" %}{% include "_bookmark_btn.html" %}{% endwith %}
+            {% with tab = "ranked" %}
+            {% include "_seen_btn.html" %}
+            {% include "_bookmark_btn.html" %}
+            {% endwith %}
             <div class="scorecol">
                 <div class="score ai" title="AI relevance">{{ score.score | round | int }}</div>
                 <div class="vote-controls">
@@ -107,7 +160,7 @@
                     <button type="button" class="vote-clear secondary outline" hx-post="/votes/delete"
                         hx-target="#library" hx-swap="innerHTML" hx-disabled-elt="this" title="Remove your rating"
                         {{ "hidden" if paper.id not in votes }} aria-label="Remove your rating"
-                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}", "active_tab": "ranked"}'>{{
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}", "active_tab": "ranked", "sort": "{{ t.sort }}", "order": "{{ t.order }}", "page": "{{ t.page }}"}'>{{
                         icon("x") }}</button>
                 </div>
                 <div class="vote-pop" popover id="vote-{{ paper.id }}">
@@ -122,40 +175,48 @@
             <div class="body">
                 <label class="pick">
                     <input type="checkbox" name="paper_ids" value="{{ paper.id }}" form="ranked-remove-form" {% if
-                        paper.id in bookmark_ids %}data-bookmarked="1" {% endif %}>
+                        paper.id in bookmark_ids %}data-skip="1" {% endif %}>
                     <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
                 </label>
                 <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{%
                     endif %}</p>
-                <p class="cats">{{ paper.categories | join(" · ") }}</p>
+                <p class="cats">{{ paper.categories | join(" · ") }}<span class="pubdate">{{
+                        paper.published_at.strftime("%d %b %Y") }}</span></p>
                 <p class="abstract">{{ paper.abstract | latex }}</p>
                 <p class="reason">{{ score.reason }}</p>
                 <small class="ranked-at">ranked {{ score.updated_at | timeago }}</small>
                 <div class="card-actions">
                     <button type="button" class="small secondary outline" hx-post="/scores/delete" hx-target="#library"
-                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}"}'>unrank</button>
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_id": "{{ paper.id }}", "sort": "{{ t.sort }}", "order": "{{ t.order }}", "page": "{{ t.page }}"}'>unrank</button>
                     <button type="button" class="icon-btn danger secondary outline" hx-post="/library/remove-selected"
                         hx-target="#library" hx-confirm="Remove from library?" title="Remove from library"
                         aria-label="Remove from library"
-                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_ids": "{{ paper.id }}", "active_tab": "ranked"}'>{{
+                        hx-vals='{"profile_id": "{{ profile.id }}", "paper_ids": "{{ paper.id }}", "active_tab": "ranked", "sort": "{{ t.sort }}", "order": "{{ t.order }}", "page": "{{ t.page }}"}'>{{
                         icon("trash-2") }}</button>
                 </div>
             </div>
         </article>
         {% endfor %}
+        {{ pager("ranked", t) }}
         {% endif %}
     </div>
 
     {# ───────────── bookmarked ───────────── #}
     <div class="tab-panel bookmarked">
-        {% if not bookmarked %}
+        {% set t = tabs["bookmarked"] %}
+        {% if not t.total %}
         <p class="empty">No bookmarks yet — tap the bookmark on any paper to save it here.</p>
         {% else %}
-        {% for paper in bookmarked %}
+        {{ sort_form("bookmarked", t, [("added", "bookmark date"), ("published", "publish date"), ("score",
+        "relevance")]) }}
+        {% for paper in t.rows %}
         {% set s = scores.get(paper.id) %}
         {% set voted = paper.id in votes %}
         <article class="bookmarked{% if s or voted %} scored{% endif %}">
-            {% with tab = "bookmarked" %}{% include "_bookmark_btn.html" %}{% endwith %}
+            {% with tab = "bookmarked" %}
+            {% include "_seen_btn.html" %}
+            {% include "_bookmark_btn.html" %}
+            {% endwith %}
             {% if s or voted %}
             <div class="scorecol">
                 {% if s %}<div class="score ai" title="AI relevance">{{ s.score | round | int }}</div>{% endif %}
@@ -166,12 +227,50 @@
                 <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
                 <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif
                     %}</p>
-                <p class="cats">{{ paper.categories | join(" · ") }}</p>
+                <p class="cats">{{ paper.categories | join(" · ") }}<span class="pubdate">{{
+                        paper.published_at.strftime("%d %b %Y") }}</span></p>
                 <p class="abstract">{{ paper.abstract | latex }}</p>
                 {% if s %}<p class="reason">{{ s.reason }}</p>{% endif %}
             </div>
         </article>
         {% endfor %}
+        {{ pager("bookmarked", t) }}
+        {% endif %}
+    </div>
+
+    {# ───────────── seen ───────────── #}
+    <div class="tab-panel seen">
+        {% set t = tabs["seen"] %}
+        {% if not t.total %}
+        <p class="empty">Nothing marked as seen — tap the eye on any paper to move it here.</p>
+        {% else %}
+        {{ sort_form("seen", t, [("seen", "seen date"), ("published", "publish date"), ("score", "relevance")]) }}
+        {% for paper in t.rows %}
+        {% set s = scores.get(paper.id) %}
+        {% set voted = paper.id in votes %}
+        <article class="seen{% if s or voted %} scored{% endif %}">
+            {% with tab = "seen" %}
+            {% include "_seen_btn.html" %}
+            {% include "_bookmark_btn.html" %}
+            {% endwith %}
+            {% if s or voted %}
+            <div class="scorecol">
+                {% if s %}<div class="score ai" title="AI relevance">{{ s.score | round | int }}</div>{% endif %}
+                {% if voted %}<div class="score vote-static" title="your rating">{{ votes[paper.id] }}</div>{% endif %}
+            </div>
+            {% endif %}
+            <div class="body">
+                <a class="title" href="{{ paper.url }}" target="_blank">{{ paper.title | latex }}</a>
+                <p class="authors">{{ paper.authors[:6] | join(", ") }}{% if paper.authors|length > 6 %}, et al.{% endif
+                    %}</p>
+                <p class="cats">{{ paper.categories | join(" · ") }}<span class="pubdate">{{
+                        paper.published_at.strftime("%d %b %Y") }}</span></p>
+                <p class="abstract">{{ paper.abstract | latex }}</p>
+                {% if s %}<p class="reason">{{ s.reason }}</p>{% endif %}
+            </div>
+        </article>
+        {% endfor %}
+        {{ pager("seen", t) }}
         {% endif %}
     </div>
 

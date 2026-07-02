@@ -81,6 +81,17 @@ class Bookmark(SQLModel, table=True):
     )
 
 
+class Seen(SQLModel, table=True):
+    """Papers a profile has marked as seen; kept even after library removal
+    so browse doesn't re-select them for import."""
+
+    __table_args__ = (UniqueConstraint("profile_id", "paper_id"),)
+    id: int | None = Field(default=None, primary_key=True)
+    profile_id: int = Field(foreign_key="profile.id", index=True)
+    paper_id: int = Field(foreign_key="paper.id", index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class Setting(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     llm_provider: str = Field(default=Defaults.LLM_PROVIDER)
