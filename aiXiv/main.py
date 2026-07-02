@@ -655,6 +655,12 @@ async def toggle_bookmark(
 cliapp = typer.Typer(add_completion=False)
 
 
+def version_callback(value: bool):
+    if value:
+        print(f"aiXiv: {__version__}")
+        raise typer.Exit()
+
+
 @cliapp.command()
 def main(
     host: Annotated[
@@ -679,6 +685,16 @@ def main(
             "-d",
             help="Path to the SQLite database file",
             dir_okay=False,
+        ),
+    ] = None,
+    _: Annotated[
+        bool | None,
+        typer.Option(
+            "--version",
+            "-v",
+            help="Show the version and exit",
+            callback=version_callback,
+            is_eager=True,
         ),
     ] = None,
 ):
