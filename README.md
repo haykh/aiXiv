@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="aiXiv/static/icons/icon.svg" alt="aiXiv logo" width="96">
+  <img src="https://raw.githubusercontent.com/haykh/aiXiv/2e6000604fed9069a2bbd2db100e407dd90084ce/aiXiv/static/icons/icon.svg" alt="aiXiv logo" width="96">
 </p>
 
 <h1 align="center">${\color{f27171}\textit{ai}}\text{Xiv}$</h1>
