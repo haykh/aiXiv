@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="static/icons/icon.svg" alt="aiXiv logo" width="96">
+  <img src="aiXiv/static/icons/icon.svg" alt="aiXiv logo" width="96">
 </p>
 
 <h1 align="center">${\color{f27171}\textit{ai}}\text{Xiv}$</h1>
