@@ -10,11 +10,13 @@
     "url": "https://github.com/haykh/aiXiv/issues"
   },
   "scripts": {
+    "arxiv:categories": "curl -s https://arxiv.org/category_taxonomy | rg -oP '<h4>(.*)<span>' -r '$1' | xargs echo -n | tr ' ' ',' > aiXiv/arxiv/arxiv_categories.csv",
     "vendor:icons": "mkdir -p aiXiv/static/vendor/icons && grep -hoP 'icon\\(\\\".*\\\"\\)' -r aiXiv/templates/ | sed 's/icon(\\\"\\(.*\\)\\\")/\\1.svg/' | xargs -I {} cp node_modules/lucide-static/icons/{} aiXiv/static/vendor/icons/",
     "vendor:htmx": "mkdir -p aiXiv/static/vendor && cp node_modules/htmx.org/dist/htmx.min.js aiXiv/static/vendor/",
     "vendor:katex": "mkdir -p aiXiv/static/vendor/katex && cp -r node_modules/katex/dist/* aiXiv/static/vendor/katex/",
-    "vendor": "npm run vendor:icons && npm run vendor:htmx && npm run vendor:katex",
+    "vendor": "npm run arxiv:categories && npm run vendor:icons && npm run vendor:htmx && npm run vendor:katex",
     "css": "sass --quiet-deps --load-path=node_modules --style=compressed scss:aiXiv/static/css",
+    "compile": "npm run vendor && npm run css",
     "css:watch": "sass --quiet-deps --load-path=node_modules --style=compressed scss:aiXiv/static/css --watch",
     "start": "concurrently \"npm run css:watch\" \"fastapi dev aiXiv/main.py\""
   },
