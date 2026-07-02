@@ -20,6 +20,19 @@ dependencies = [
     "python-multipart>=0.0.9",
     "typer>=0.26.8",
 ]
+classifiers = [
+    "Framework :: FastAPI",
+    "Environment :: Web Environment",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+[project.urls]
+Repository = "https://github.com/haykh/aiXiv"
 
 [project.scripts]
 aiXiv = "aiXiv.main:run"
