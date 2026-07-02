@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "aiXiv"
+name = "aixiv-digest"
 dynamic = ["version"]
 description = "A personalized AI-driven arXiv digest based on your research profile"
 readme = "README.md"
