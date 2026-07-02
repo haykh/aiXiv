@@ -1,6 +1,6 @@
 {
   "name": "aiXiv",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A personalized digest from the arXiv",
   "repository": {
     "type": "git",
