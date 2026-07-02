@@ -2,10 +2,14 @@ import json
 import math
 import logging
 from datetime import datetime
+import os
 from pathlib import Path
 from functools import lru_cache
 from contextlib import asynccontextmanager
+from typing import Annotated
 
+import typer
+import uvicorn
 from markupsafe import Markup
 from fastapi import FastAPI, Request, Form, Response, Query
 from fastapi.responses import RedirectResponse, HTMLResponse, StreamingResponse
@@ -15,7 +19,7 @@ from sqlmodel import select, Session
 
 from aiXiv import __version__
 from aiXiv.settings import Defaults
-from aiXiv.database.db import initialize_db, SessionDep, get_settings, engine
+from aiXiv.database.db import initialize_db, SessionDep, get_settings, get_engine
 from aiXiv.database.tables import Profile, Score, Paper, Library, Vote, Bookmark
 from aiXiv.utils.latex2html import latex_to_html
 from aiXiv.utils.timeago import timeago
@@ -27,9 +31,12 @@ from aiXiv.llm.cli import CodexCLIClient
 from aiXiv.arxiv.arxiv import fetch_from_arxiv, fetch_from_arxiv_by_ids, store_papers
 from aiXiv.arxiv.categories import ArxivCategory
 
-root_path = Path(__file__).parent.parent
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s:     [%(name)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(levelname)s:     [%(name)s] %(message)s"
+)
+
+# ───────────────────────── FastAPI app ─────────────────────────
 
 
 @asynccontextmanager
@@ -44,22 +51,25 @@ app = FastAPI(
     description="A personalized digest from the arXiv.",
     lifespan=lifespan,
 )
+
+root_path = Path(__file__).parent
+
 app.mount("/static", StaticFiles(directory=str(root_path / "static")), name="static")
 app.mount(
     "/katex",
-    StaticFiles(directory=str(root_path / "node_modules" / "katex" / "dist")),
+    StaticFiles(directory=str(root_path / "static" / "vendor" / "katex")),
     name="katex",
 )
 app.mount(
     "/htmx",
-    StaticFiles(directory=str(root_path / "node_modules" / "htmx.org" / "dist")),
+    StaticFiles(directory=str(root_path / "static" / "vendor")),
     name="htmx",
 )
 templates = Jinja2Templates(directory=str(root_path / "templates"))
 templates.env.filters["latex"] = latex_to_html
 templates.env.filters["timeago"] = timeago
 
-_icons_dir = root_path / "node_modules" / "lucide-static" / "icons"
+_icons_dir = root_path / "static" / "vendor" / "icons"
 
 
 @lru_cache
@@ -387,7 +397,7 @@ async def rank_stream(profile_id: int, paper_ids: list[int] = Query(default=[]))
 
     async def event_gen():
         # a dedicated session: the stream outlives the normal request/response cycle
-        with Session(engine) as session:
+        with Session(get_engine()) as session:
             try:
                 profile = session.get(Profile, profile_id)
                 papers = (
@@ -638,3 +648,46 @@ async def toggle_bookmark(
         profile_id,
         active_tab=active_tab,
     )
+
+
+# ───────────────────────── Typer CLI app ─────────────────────────
+
+cliapp = typer.Typer(add_completion=False)
+
+
+@cliapp.command()
+def main(
+    host: Annotated[
+        str,
+        typer.Option(
+            "--host",
+            help="Host to bind the server to",
+        ),
+    ] = "127.0.0.1",
+    port: Annotated[
+        int,
+        typer.Option(
+            "--port",
+            "-p",
+            help="Port to bind the server to",
+        ),
+    ] = 8000,
+    db: Annotated[
+        Path | None,
+        typer.Option(
+            "--db",
+            "-d",
+            help="Path to the SQLite database file",
+            dir_okay=False,
+        ),
+    ] = None,
+):
+
+    if db is not None:
+        os.environ["AIXIV_DB_PATH"] = str(db.expanduser().resolve())
+
+    uvicorn.run(app, host=host, port=port)
+
+
+def run():
+    cliapp()

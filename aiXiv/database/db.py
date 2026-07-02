@@ -2,6 +2,7 @@ import os
 import sqlite3
 from typing import Annotated
 from pathlib import Path
+from functools import lru_cache
 
 from fastapi import Depends
 from sqlmodel import (
@@ -15,24 +16,25 @@ from aiXiv.settings import Defaults
 from aiXiv.database.tables import Setting
 
 
-DB_PATH = Path(os.environ.get("AIXIV_DB_PATH", Defaults.DB_PATH))
-DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+def db_path() -> Path:
+    return Path(os.environ.get("AIXIV_DB_PATH", Defaults.DB_PATH)).expanduser()
 
-db_filename = str(DB_PATH)
-db_url = f"sqlite:///{db_filename}"
 
-connect_args = {"check_same_thread": False}
-engine = create_engine(db_url, connect_args=connect_args)
+@lru_cache
+def get_engine():
+    path = db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return create_engine(f"sqlite:///{path}", connect_args={"check_same_thread": False})
 
 
 def initialize_db():
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(get_engine())
     _ensure_setting_columns()
     _rename_profile_columns()
 
 
 def _ensure_setting_columns():
-    con = sqlite3.connect(db_filename)
+    con = sqlite3.connect(db_path())
     try:
         existing = {row[1] for row in con.execute("PRAGMA table_info(setting)")}
         for col in ("claude_api_key", "openai_api_key"):
@@ -44,9 +46,8 @@ def _ensure_setting_columns():
 
 
 def _rename_profile_columns():
-    """Migrate the old raw_profile/summary_profile columns to their new names."""
     renames = {"raw_profile": "raw_text", "summary_profile": "summary"}
-    con = sqlite3.connect(db_filename)
+    con = sqlite3.connect(db_path())
     try:
         existing = {row[1] for row in con.execute("PRAGMA table_info(profile)")}
         for old, new in renames.items():
@@ -58,7 +59,7 @@ def _rename_profile_columns():
 
 
 def get_session():
-    with Session(engine) as session:
+    with Session(get_engine()) as session:
         yield session
 
 
