@@ -30,34 +30,52 @@ aiXiv reads a description of your research interests, builds an interest profile
 ## Requirements
 
 - Python 3.11+
-- Node.js and npm (front-end libraries — HTMX, KaTeX, Lucide icons — are served from `node_modules`, and the stylesheet is compiled from Sass)
 - An LLM backend: a local [Ollama](https://ollama.com/) server, or a logged-in [Claude Code](https://code.claude.com/docs/en/overview) (`claude`) or [Codex](https://developers.openai.com/codex/cli/) (`codex`) CLI (see [Configuration](#configuration)).
 
-## Setup
+## Install
 
 ```sh
-# 1. Python dependencies
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# 2. Front-end dependencies (required — served at runtime from node_modules)
-npm i
-
-# 3. Build the stylesheet (a compiled static/css/main.css is committed;
-#    run this after editing anything under scss/)
-npm run css
+uv tool install aixiv-digest 
+# or
+pip install aixiv-digest
 ```
 
 ## Running
 
 ```sh
+aiXiv
+# or to view options
+aiXiv --help
+```
+
+Then open the URL it prints (by default <http://127.0.0.1:8000>).
+
+| Flag             | Meaning                          |
+| ---------------- | -------------------------------- |
+| `--host`         | Host to bind the server to       |
+| `--port`, `-p`   | Port to bind the server to       |
+| `--db`, `-d`     | Path to the SQLite database file |
+
+## Development
+
+Running from a clone additionally needs Node.js/npm — the front-end assets (HTMX, KaTeX, Lucide icons) are vendored from `node_modules` into the package, and the stylesheet is compiled from Sass:
+
+```sh
+# 1. Python package (editable)
+uv venv && source .venv/bin/activate
+uv pip install -e .
+
+# 2. Front-end assets (vendored copies are committed;
+#    re-run after upgrading npm packages or editing scss/)
+npm i
+npm run vendor
+npm run css
+
+# 3. Dev server (auto-reload)
 fastapi dev aiXiv/main.py
 ```
 
-Then open the URL it prints (by default <http://127.0.0.1:8000>). The SQLite database is created automatically at `data/app.db` on first run.
-
-> You may also just run the `scss` transpiler together with the `fastapi` server concurrently using just `npm start`.
+> `npm start` runs the Sass watcher and the dev server together.
 
 ## Configuration
 
@@ -89,15 +107,15 @@ Point the API URL at your Ollama instance and pull a model beforehand (e.g. `oll
 
 ```
 aiXiv/
-  main.py            FastAPI app: routes and page rendering
+  main.py            FastAPI app: routes, page rendering, CLI entry point
   settings.py        default settings and LLM prompts
   arxiv/             arXiv fetching and category list
   database/          SQLModel tables and DB setup/migrations
   llm/               LLM abstraction (base, ollama, cli) + profile/paper logic
   utils/             LaTeX-to-HTML and "time ago" helpers
-templates/           Jinja2 templates (HTMX-driven fragments)
-scss/ + static/      Sass sources and compiled assets
-data/                SQLite database (created on first run)
+  templates/         Jinja2 templates (HTMX-driven fragments)
+  static/            compiled CSS + vendored front-end assets
+scss/                Sass sources (compiled into aiXiv/static/css)
 ```
 
 ## Tech stack
